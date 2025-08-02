@@ -19,7 +19,17 @@ import com.avloga.budgetik.R
 import com.avloga.budgetik.ui.components.*
 
 @Composable
-fun MainScreen(navController: NavController) {
+fun MainScreen(
+    navController: NavController,
+    userId: String
+) {
+    // Визначаємо дані користувача залежно від userId
+    val (name, balance, avatarRes) = when (userId.lowercase()) {
+        "pasha" -> Triple("Паша", "9 500 ₴", R.drawable.pasha_avatar)
+        "tanya" -> Triple("Таня", "12 300 ₴", R.drawable.tanya_avatar)
+        else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -31,9 +41,9 @@ fun MainScreen(navController: NavController) {
                 .padding(top = 24.dp)  // ось тут додано відступ зверху
         ) {
             UserHeader(
-                name = "Паша",
-                balance = "9 500 ₴",
-                avatarRes = R.drawable.pasha_avatar
+                name = name,
+                balance = balance,
+                avatarRes = avatarRes
             )
 
             Spacer(modifier = Modifier.height(24.dp))

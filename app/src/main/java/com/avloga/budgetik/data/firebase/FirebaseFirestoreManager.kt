@@ -3,39 +3,26 @@ package com.avloga.budgetik.data.firebase
 import android.util.Log
 import com.avloga.budgetik.data.model.Group
 import com.avloga.budgetik.data.model.Expence
+import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
-class FirebaseFirestoreManager(private val firestore: FirebaseFirestore) {
+object FirebaseFirestoreManager {
+    private val db = Firebase.firestore
 
-    private val familiesCollection = firestore.collection("families")
-
-    // Створити групу
-    suspend fun createGroup(group: Group): Boolean {
-        return try {
-            familiesCollection.document(group.familyId).set(group).await()
-            Log.d("FirestoreManager", "Групу створено: ${group.familyId}")
-            true
-        } catch (e: Exception) {
-            Log.e("FirestoreManager", "Помилка при створенні групи: ${e.message}")
-            false
-        }
+    fun getUserData(uid: String, onSuccess: (UserData) -> Unit, onError: (String) -> Unit) {
+        db.collection("users").document(uid)
+            .get()
+            .addOnSuccessListener { doc ->
+                val name = doc.getString("name") ?: "?"
+                val budget = doc.getDouble("budget") ?: 0.0
+                onSuccess(UserData(name, budget))
+            }
+            .addOnFailureListener {
+                onError(it.message ?: "Помилка отримання даних")
+            }
     }
-
-    // Додати витрату
-    suspend fun addExpence(familyId: String, expence: Expence): Boolean {
-        return try {
-            familiesCollection.document(familyId)
-                .collection("expenses")
-                .add(expence)
-                .await()
-            Log.d("FirestoreManager", "Витрату додано: $expence")
-            true
-        } catch (e: Exception) {
-            Log.e("FirestoreManager", "Помилка при додаванні витрати: ${e.message}")
-            false
-        }
-    }
-
-    // Тут можна додавати методи getGroup(), getExpenses() тощо
 }
+
+data class UserData(val name: String, val budget: Double)

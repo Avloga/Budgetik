@@ -7,10 +7,9 @@ import androidx.compose.material3.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.avloga.budgetik.ui.screens.LoginScreen
-import com.avloga.budgetik.ui.screens.RegisterScreen
 import com.avloga.budgetik.ui.screens.MainScreen
 import com.avloga.budgetik.ui.theme.BudgetikTheme
+import com.budgetik.ui.screens.LoginScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,16 +20,18 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = "Login") {
                     composable("Login") {
-                        LoginScreen(navController = navController)
+                        LoginScreen(navController = navController) { userId ->
+                            navController.navigate("MainScreen/$userId")
+                        }
                     }
-                    composable("Register") {
-                        RegisterScreen(navController)
+                    composable("MainScreen/{userId}") { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId") ?: "unknown"
+                        MainScreen(navController = navController, userId = userId)
                     }
-                    composable("MainScreen") {
-                        MainScreen(navController = navController)
-                    }
-                    // додай інші екрани, якщо потрібно
                 }
+
+                // додай інші екрани, якщо потрібно
+
             }
         }
     }
