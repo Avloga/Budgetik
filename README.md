@@ -1,1 +1,1 @@
-# SpendTogether
+# Budgetik
