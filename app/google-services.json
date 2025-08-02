@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "373563633838",
+    "project_id": "budgetik-228",
+    "storage_bucket": "budgetik-228.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373563633838:android:f8ef17f65e4b5246df7d3f",
+        "android_client_info": {
+          "package_name": "com.avloga.budgetik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNWU_DtkhfEgzMNrxqlK2TXHR9OeoE9Qo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
