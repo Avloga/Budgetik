@@ -1,14 +1,21 @@
 package com.avloga.budgetik.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.avloga.budgetik.R
 import com.avloga.budgetik.data.model.Expense
+import androidx.compose.ui.text.style.TextOverflow
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -29,7 +37,7 @@ import java.util.Locale
 @Composable
 fun ExpenseRow(expense: Expense) {
     val amountColor = if (expense.type == "income") Color(0xFF2E7D32) else Color(0xFFC62828)
-
+    var showDialog by remember { mutableStateOf(false) }
     val amountText = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString()
 
     val avatarRes = when (expense.userName) {
@@ -38,12 +46,30 @@ fun ExpenseRow(expense: Expense) {
         else -> R.drawable.default_avatar
     }
 
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Закрити")
+                }
+            },
+            title = {
+                Text("Коментар")
+            },
+            text = {
+                Text(expense.comment)
+            }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 8.dp),
+            .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // 1. Аватарка
         Image(
             painter = painterResource(id = avatarRes),
             contentDescription = "Avatar",
@@ -52,8 +78,10 @@ fun ExpenseRow(expense: Expense) {
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Spacer(Modifier.width(8.dp))
+
+        // 2. Колонка з ім'ям і категорією
+        Column(modifier = Modifier.width(80.dp)) {
             Text(text = expense.userName, fontWeight = FontWeight.Bold)
             expense.category?.let {
                 Text(
@@ -63,6 +91,22 @@ fun ExpenseRow(expense: Expense) {
                 )
             }
         }
+
+        // 3. Коментар по центру, розтягується на весь доступний простір
+        Text(
+            text = expense.comment ?: "",
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .clickable { showDialog = true },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.DarkGray
+        )
+
+        Spacer(Modifier.width(8.dp))
+
+        // 4. Колонка з сумою і часом (праворуч)
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = amountText,
@@ -70,7 +114,7 @@ fun ExpenseRow(expense: Expense) {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = expense.date + " " + expense.time,
+                text = expense.time,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )

@@ -40,10 +40,16 @@ fun MainScreen(
 
     var showDialog by remember { mutableStateOf(false) }
 
-    val (name, _, avatarRes) = when (userId.lowercase()) {
-        "pasha" -> Triple("Паша", "9 500 ₴", R.drawable.pasha_avatar)
-        "tanya" -> Triple("Таня", "12 300 ₴", R.drawable.tanya_avatar)
-        else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
+    val name = when (userId.lowercase()) {
+        "pasha" -> "Паша"
+        "tanya" -> "Таня"
+        else -> "Користувач"
+    }
+
+    val avatarRes = when (userId.lowercase()) {
+        "pasha" -> R.drawable.pasha_avatar
+        "tanya" -> R.drawable.tanya_avatar
+        else -> R.drawable.default_avatar
     }
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
