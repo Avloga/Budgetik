@@ -35,33 +35,24 @@ fun MainScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val expenses by FirebaseFirestoreManager.getExpensesFlow().collectAsState(initial = emptyList())
 
-    // Визначаємо дані користувача залежно від userId
+    var showDialog by remember { mutableStateOf(false) }
+    var showFullExpenses by remember { mutableStateOf(false) }
+
     val (name, balance, avatarRes) = when (userId.lowercase()) {
         "pasha" -> Triple("Паша", "9 500 ₴", R.drawable.pasha_avatar)
         "tanya" -> Triple("Таня", "12 300 ₴", R.drawable.tanya_avatar)
         else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
     }
 
-    // Завантаження витрат при відкритті екрану
-    val expenses by FirebaseFirestoreManager.getExpensesFlow()
-        .collectAsState(initial = emptyList())
-
-
-    var showDialog by remember { mutableStateOf(false) }
-
-    // Фільтруємо витрати по поточному користувачу
-    val allExpenses = expenses
-
-    // Останні витрати — показуємо всі (income + outcome)
-    val recentExpenses = allExpenses.sortedByDescending { it.date + it.time }.take(10)
+    val allExpenses = expenses.sortedByDescending { it.date + it.time }
 
     // Статистика за категоріями — тільки outcome
     val expensesOutcome = allExpenses.filter { it.type == "outcome" }
     val categoryStats = expensesOutcome.groupBy { it.category ?: "Інше" }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
 
-    // Загальна сума балансу — для прикладу можна порахувати
     val totalBalance = allExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
     val balanceText = "${totalBalance.toInt()} ₴"
 
@@ -75,7 +66,7 @@ fun MainScreen(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .padding(top = 24.dp)
-                    .then(if (showDialog) Modifier.blur(6.dp) else Modifier)
+                    .then(if (showDialog || showFullExpenses) Modifier.blur(6.dp) else Modifier)
             ) {
                 UserHeader(
                     name = name,
@@ -85,7 +76,6 @@ fun MainScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Кнопка "+ Додати"
                 Button(
                     onClick = { showDialog = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -96,26 +86,29 @@ fun MainScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SectionTitle("Останні операції")
+                SectionTitleWithAction(
+                    title = "Останні операції",
+                    actionText = if (showFullExpenses) "Закрити" else "Усі >",
+                    onActionClick = { showFullExpenses = !showFullExpenses }
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (recentExpenses.isEmpty()) {
-                    Text("Поки що немає операцій.", color = Color.Gray)
-                } else {
-                    recentExpenses.forEach { expense ->
-                        ExpenseRow(
-                            expense = ExpenseItem(
-                                userName = expense.userName,
-                                category = expense.category ?: "",
-                                amount = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString(),
-                                date = expense.date,
-                                avatarRes = if (expense.userName == "Паша") R.drawable.pasha_avatar else R.drawable.tanya_avatar,
-                                type = expense.type // ← передаємо тип
-                            )
+                ExpenseList(
+                    expenses = allExpenses.map { expense ->
+                        ExpenseItem(
+                            userName = expense.userName,
+                            category = expense.category ?: "",
+                            amount = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString(),
+                            date = expense.date,
+                            avatarRes = if (expense.userName == "Паша") R.drawable.pasha_avatar else R.drawable.tanya_avatar,
+                            type = expense.type
                         )
-                        Divider(color = Color.LightGray, thickness = 1.dp)
-                    }
-                }
+                    },
+                    showFull = showFullExpenses,
+                    onToggleShowFull = { showFullExpenses = !showFullExpenses }
+                )
+
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -135,13 +128,7 @@ fun MainScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Цілі заощаджень — для прикладу можна замінити на реальні дані
-                //SavingsGoalsSection()
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Графік витрат (плейсхолдер)
-                //ExpensesChartSection()
+                // Тут можна додати інші секції, якщо потрібно
             }
 
             if (showDialog) {
@@ -167,6 +154,25 @@ fun MainScreen(
         }
     }
 }
+
+@Composable
+fun SectionTitleWithAction(title: String, actionText: String, onActionClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = actionText,
+            style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF2E7D32)),
+            modifier = Modifier.clickable { onActionClick() }
+        )
+    }
+}
+
 
 @Composable
 fun SectionTitle(title: String) {
