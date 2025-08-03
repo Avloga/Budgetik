@@ -1,7 +1,6 @@
 package com.avloga.budgetik.ui.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Divider
@@ -17,21 +16,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.avloga.budgetik.R
-
-// Модель витрати (винесена окремо)
-data class ExpenseItem(
-    val userName: String,
-    val category: String,
-    val amount: String,
-    val date: String,
-    val avatarRes: Int,
-    val type: String
-)
+import com.avloga.budgetik.data.model.Expense
 
 // Одна витрата
 @Composable
-fun ExpenseRow(expense: ExpenseItem) {
+fun ExpenseRow(expense: Expense) {
     val amountColor = if (expense.type == "income") Color(0xFF2E7D32) else Color(0xFFC62828)
+
+    // Конвертуємо amount Double в форматований рядок з +/-
+    val amountText = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString()
+
+    // Визначаємо аватар за іменем користувача
+    val avatarRes = when (expense.userName) {
+        "Паша" -> R.drawable.pasha_avatar
+        "Таня" -> R.drawable.tanya_avatar
+        else -> R.drawable.default_avatar
+    }
 
     Row(
         modifier = Modifier
@@ -40,7 +40,7 @@ fun ExpenseRow(expense: ExpenseItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = expense.avatarRes),
+            painter = painterResource(id = avatarRes),
             contentDescription = "Avatar",
             modifier = Modifier
                 .size(40.dp)
@@ -50,15 +50,17 @@ fun ExpenseRow(expense: ExpenseItem) {
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(text = expense.userName, fontWeight = FontWeight.Bold)
-            Text(
-                text = expense.category,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
+            expense.category?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = expense.amount,
+                text = amountText,
                 color = amountColor,
                 fontWeight = FontWeight.Bold
             )
@@ -74,7 +76,7 @@ fun ExpenseRow(expense: ExpenseItem) {
 // Список витрат з опцією згортання/розгортання
 @Composable
 fun ExpenseList(
-    expenses: List<ExpenseItem>,
+    expenses: List<Expense>,
     showFull: Boolean,
     onToggleShowFull: () -> Unit
 ) {
