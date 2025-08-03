@@ -18,9 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun UserHeader(name: String, balance: String, avatarRes: Int) {
+fun UserHeader(
+    name: String,
+    balance: String,
+    avatarRes: Int,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(80.dp)
             .clip(RoundedCornerShape(16.dp))

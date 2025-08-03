@@ -6,8 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,10 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.avloga.budgetik.R
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
-import com.avloga.budgetik.data.model.Expense
 import com.avloga.budgetik.ui.components.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavController,
@@ -38,7 +43,19 @@ fun MainScreen(
         else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
     }
 
-    val allExpenses = expenses.sortedByDescending { it.date + it.time }
+    val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm") // або твій формат часу
+
+    val allExpenses = expenses.sortedByDescending { expense ->
+        try {
+            val date = LocalDate.parse(expense.date, dateFormatter)
+            val time = LocalTime.parse(expense.time, timeFormatter)
+            LocalDateTime.of(date, time)
+        } catch (e: Exception) {
+            // Якщо парсинг не вдався — ставимо мінімальне значення, щоб ці елементи були внизу
+            LocalDateTime.MIN
+        }
+    }
     val recentExpenses = allExpenses.take(5)
 
     val expensesOutcome = allExpenses.filter { it.type == "outcome" }
@@ -57,13 +74,13 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
-                    .padding(top = 24.dp)
+                    .padding(top = 90.dp)
             ) {
-                UserHeader(
-                    name = name,
-                    balance = balanceText,
-                    avatarRes = avatarRes
-                )
+//                UserHeader(
+//                    name = name,
+//                    balance = balanceText,
+//                    avatarRes = avatarRes
+//                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -73,6 +90,33 @@ fun MainScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                 ) {
                     Text("+ Додати", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Новий рядок із трьома кнопками
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { /* поки що без функціоналу */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Кнопка 1")
+                    }
+                    Button(
+                        onClick = { /* поки що без функціоналу */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Кнопка 2")
+                    }
+                    Button(
+                        onClick = { /* поки що без функціоналу */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Кнопка 3")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -94,7 +138,7 @@ fun MainScreen(
                 Column {
                     recentExpenses.forEach { expense ->
                         ExpenseRow(expense = expense)
-                        Divider(color = Color.LightGray, thickness = 1.dp)
+                        //HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                     }
                 }
 
@@ -116,6 +160,41 @@ fun MainScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
+
+            // Верхній AppBar з аватаркою, ім'ям і кнопкою налаштувань
+            CenterAlignedTopAppBar(
+                title = {
+                    // Залиш порожнім, або додай щось дрібне
+                },
+                navigationIcon = {
+                    // Замість navigationIcon використовуємо весь вміст
+                    Row(
+                        modifier = Modifier
+                            .padding(end = 60.dp) // ВАЖЛИВО
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Ось тут буде вже сам UserHeader з нуля або inline
+                        UserHeader(
+                            name = name,
+                            balance = balanceText,
+                            avatarRes = avatarRes,
+                            modifier = Modifier
+                                .padding(start = 0.dp)
+                                .fillMaxWidth()
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        // TODO: Перехід у налаштування
+                    }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Налаштування")
+                    }
+                }
+            )
+
 
             if (showDialog) {
                 AddExpenseDialog(
