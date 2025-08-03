@@ -1,6 +1,7 @@
 package com.avloga.budgetik.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,9 +26,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import com.avloga.budgetik.R
 import com.avloga.budgetik.data.model.Expense
-import androidx.compose.ui.text.style.TextOverflow
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -69,7 +70,6 @@ fun ExpenseRow(expense: Expense) {
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Аватарка
         Image(
             painter = painterResource(id = avatarRes),
             contentDescription = "Avatar",
@@ -80,7 +80,6 @@ fun ExpenseRow(expense: Expense) {
         )
         Spacer(Modifier.width(8.dp))
 
-        // 2. Колонка з ім'ям і категорією
         Column(modifier = Modifier.width(80.dp)) {
             Text(text = expense.userName, fontWeight = FontWeight.Bold)
             expense.category?.let {
@@ -92,21 +91,18 @@ fun ExpenseRow(expense: Expense) {
             }
         }
 
-        // 3. Коментар по центру, розтягується на весь доступний простір
         Text(
             text = expense.comment ?: "",
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
+                .padding(horizontal = 8.dp)
                 .clickable { showDialog = true },
             style = MaterialTheme.typography.bodyMedium,
             color = Color.DarkGray
         )
 
-        Spacer(Modifier.width(8.dp))
-
-        // 4. Колонка з сумою і часом (праворуч)
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = amountText,
@@ -134,14 +130,13 @@ fun ExpenseList(
     val today = LocalDate.now()
     val yesterday = today.minusDays(1)
 
-    // Групуємо витрати за датою
     val grouped = expenses.groupBy { expense ->
         try {
             LocalDate.parse(expense.date, dateFormatter)
         } catch (e: Exception) {
             null
         }
-    }.toSortedMap(compareByDescending { it ?: LocalDate.MIN }) // Сортуємо дати від нових до старих
+    }.toSortedMap(compareByDescending { it ?: LocalDate.MIN })
 
     LazyColumn(modifier = modifier) {
         var shownCount = 0
@@ -160,8 +155,7 @@ fun ExpenseList(
                 else -> "Невідома дата"
             }
 
-            // Сортуємо витрати в дні по часу (від раннього до пізнього)
-            val sortedDailyExpenses = dailyExpenses.sortedByDescending  { expense ->
+            val sortedDailyExpenses = dailyExpenses.sortedByDescending { expense ->
                 try {
                     LocalTime.parse(expense.time, timeFormatter)
                 } catch (e: Exception) {
@@ -169,25 +163,29 @@ fun ExpenseList(
                 }
             }
 
-            item {
-                Text(
-                    text = dateText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+            stickyHeader {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    color = Color.DarkGray,
-                    textAlign = TextAlign.Center
-                )
-
-                sortedDailyExpenses.forEach { expense ->
-                    if (!showFull && shownCount >= 5) return@forEach
-                    ExpenseRow(expense = expense)
-                    //Divider(color = Color.LightGray, thickness = 1.dp)
-                    shownCount++
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = dateText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.DarkGray,
+                        textAlign = TextAlign.Center
+                    )
                 }
+            }
+
+            items(sortedDailyExpenses) { expense ->
+                if (!showFull && shownCount >= 5) return@items
+                ExpenseRow(expense = expense)
+                shownCount++
             }
         }
 

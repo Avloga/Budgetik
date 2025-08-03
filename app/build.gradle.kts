@@ -67,12 +67,18 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth:22.3.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.navigation:navigation-compose:2.7.7") // Перевірте актуальну версію
     implementation("androidx.compose.material3:material3:1.2.1") // Для Material 3 компонентів
     implementation("androidx.compose.ui:ui:1.5.0")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
-    implementation("androidx.activity:activity-compose:1.7.2")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+    implementation("androidx.activity:activity-compose:1.7.1")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-firestore:24.10.2")
+    implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
 }

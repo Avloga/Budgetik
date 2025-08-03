@@ -1,5 +1,6 @@
 package com.avloga.budgetik
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,10 +17,21 @@ import com.avloga.budgetik.ui.screens.LoginScreen
 import com.avloga.budgetik.ui.screens.AllExpensesScreen
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import android.os.Build
+import androidx.core.view.WindowCompat
+import android.view.View
+import android.view.WindowInsetsController
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowInsetsControllerCompat
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Забезпечуємо відображення контенту від краю до краю
+        enableEdgeToEdge()
+
         setContent {
             BudgetikTheme {
                 val navController = rememberNavController()
@@ -54,5 +66,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+fun ensureUserLoggedIn(onLoggedIn: () -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    if (currentUser == null) {
+        auth.signInAnonymously().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                onLoggedIn()
+            } else {
+                // Тут можна показати помилку
+            }
+        }
+    } else {
+        onLoggedIn()
     }
 }

@@ -22,10 +22,19 @@ import com.avloga.budgetik.R
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
 import com.avloga.budgetik.ui.components.*
 import kotlinx.coroutines.launch
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import androidx.compose.runtime.SideEffect
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +43,8 @@ fun MainScreen(
     userId: String,
     viewModel: ExpensesViewModel = viewModel()
 ) {
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val expenses by viewModel.expensesFlow.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
