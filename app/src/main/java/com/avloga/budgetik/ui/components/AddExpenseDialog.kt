@@ -84,15 +84,21 @@ fun AddExpenseDialog(
                 Spacer(Modifier.height(8.dp))
 
                 // Тип операції Dropdown
-                Box {
+                ExposedDropdownMenuBox(
+                    expanded = expandedType,
+                    onExpandedChange = { expandedType = !expandedType }
+                ) {
                     OutlinedTextField(
                         value = if (selectedType == "outcome") "Витрата" else "Поповнення",
                         onValueChange = {},
-                        label = { Text("Тип операції") },
                         readOnly = true,
-                        modifier = Modifier.fillMaxWidth().clickable { expandedType = true }
+                        label = { Text("Тип операції") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType)
+                        },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    DropdownMenu(
+                    ExposedDropdownMenu(
                         expanded = expandedType,
                         onDismissRequest = { expandedType = false }
                     ) {
@@ -108,35 +114,41 @@ fun AddExpenseDialog(
                     }
                 }
 
+
                 Spacer(Modifier.height(8.dp))
 
                 // Категорія Dropdown (недоступна, якщо selectedType == income)
-                Box {
+                ExposedDropdownMenuBox(
+                    expanded = expandedCategory,
+                    onExpandedChange = { if (selectedType == "outcome") expandedCategory = !expandedCategory }
+                ) {
                     OutlinedTextField(
                         value = selectedCategory,
                         onValueChange = {},
+                        readOnly = true,
                         label = { Text("Категорія") },
                         enabled = selectedType == "outcome",
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth().clickable(enabled = selectedType == "outcome") {
-                            if (selectedType == "outcome") expandedCategory = true
-                        }
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
+                        },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    DropdownMenu(
+                    ExposedDropdownMenu(
                         expanded = expandedCategory,
                         onDismissRequest = { expandedCategory = false }
                     ) {
-                        categories.forEach { cat ->
+                        categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(cat) },
+                                text = { Text(category) },
                                 onClick = {
-                                    selectedCategory = cat
+                                    selectedCategory = category
                                     expandedCategory = false
                                 }
                             )
                         }
                     }
                 }
+
 
                 Spacer(Modifier.height(8.dp))
 

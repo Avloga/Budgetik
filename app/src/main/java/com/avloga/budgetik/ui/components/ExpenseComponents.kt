@@ -21,17 +21,20 @@ data class ExpenseItem(
     val category: String,
     val amount: String,
     val date: String,
-    val avatarRes: Int
+    val avatarRes: Int,
+    val type: String
 )
 
 val sampleExpenses = listOf(
-    ExpenseItem("Таня", "Одяг", "1 500", "сьогодні", R.drawable.tanya_avatar),
-    ExpenseItem("Паша", "Їжа", "800", "сьогодні", R.drawable.pasha_avatar),
-    ExpenseItem("Таня", "Транспорт", "300", "вчора", R.drawable.tanya_avatar),
+    ExpenseItem("Таня", "Одяг", "1 500", "сьогодні", R.drawable.tanya_avatar, "outcome"),
+    ExpenseItem("Паша", "Їжа", "800", "сьогодні", R.drawable.pasha_avatar, "outcome"),
+    ExpenseItem("Таня", "Транспорт", "300", "вчора", R.drawable.tanya_avatar, "outcome"),
 )
 
 @Composable
 fun ExpenseRow(expense: ExpenseItem) {
+    val amountColor = if (expense.type == "income") Color(0xFF2E7D32) else Color(0xFFC62828) // зелений/червоний
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -52,7 +55,11 @@ fun ExpenseRow(expense: ExpenseItem) {
             Text(text = expense.category, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(text = "-${expense.amount}", color = Color.Red, fontWeight = FontWeight.Bold)
+            Text(
+                text = expense.amount,
+                color = amountColor,
+                fontWeight = FontWeight.Bold
+            )
             Text(text = expense.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
     }

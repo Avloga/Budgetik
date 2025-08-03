@@ -3,6 +3,9 @@ package com.avloga.budgetik.data.firebase
 import com.avloga.budgetik.data.model.Expense
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 object FirebaseFirestoreManager {
@@ -34,17 +37,24 @@ object FirebaseFirestoreManager {
         }
     }
 
-    // Можеш додати інші методи, наприклад для отримання всіх витрат:
-    /*
-    suspend fun getExpenses(): List<Expense> {
-        return try {
-            expensesCollection
-                .get()
-                .await()
-                .toObjects(Expense::class.java)
-        } catch (e: Exception) {
-            emptyList()
-        }
+    fun getExpensesFlow(): Flow<List<Expense>> = callbackFlow {
+        val listenerRegistration = Firebase.firestore
+            .collection("expenses")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+
+                val expenses = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(Expense::class.java)
+                } ?: emptyList()
+
+                trySend(expenses)
+            }
+
+        awaitClose { listenerRegistration.remove() }
     }
-    */
+
+
 }

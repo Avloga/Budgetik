@@ -31,8 +31,7 @@ import java.util.*
 @Composable
 fun MainScreen(
     navController: NavController,
-    userId: String,
-    expenses: List<Expense> = emptyList()  // Передавай сюди реальні дані
+    userId: String
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -44,21 +43,26 @@ fun MainScreen(
         else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
     }
 
+    // Завантаження витрат при відкритті екрану
+    val expenses by FirebaseFirestoreManager.getExpensesFlow()
+        .collectAsState(initial = emptyList())
+
+
     var showDialog by remember { mutableStateOf(false) }
 
     // Фільтруємо витрати по поточному користувачу
-    val userExpenses = expenses.filter { it.userName == name }
+    val allExpenses = expenses
 
     // Останні витрати — показуємо всі (income + outcome)
-    val recentExpenses = userExpenses.sortedByDescending { it.date + it.time }.take(10)
+    val recentExpenses = allExpenses.sortedByDescending { it.date + it.time }.take(10)
 
     // Статистика за категоріями — тільки outcome
-    val expensesOutcome = userExpenses.filter { it.type == "outcome" }
+    val expensesOutcome = allExpenses.filter { it.type == "outcome" }
     val categoryStats = expensesOutcome.groupBy { it.category ?: "Інше" }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
 
     // Загальна сума балансу — для прикладу можна порахувати
-    val totalBalance = userExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
+    val totalBalance = allExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
     val balanceText = "${totalBalance.toInt()} ₴"
 
     Surface(
@@ -105,7 +109,8 @@ fun MainScreen(
                                 category = expense.category ?: "",
                                 amount = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString(),
                                 date = expense.date,
-                                avatarRes = if (expense.userName == "Паша") R.drawable.pasha_avatar else R.drawable.tanya_avatar
+                                avatarRes = if (expense.userName == "Паша") R.drawable.pasha_avatar else R.drawable.tanya_avatar,
+                                type = expense.type // ← передаємо тип
                             )
                         )
                         Divider(color = Color.LightGray, thickness = 1.dp)
