@@ -1,3 +1,6 @@
+package com.avloga.budgetik.ui.screens
+
+import ExpensesViewModel
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -9,7 +12,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.avloga.budgetik.data.model.Expense
 import com.avloga.budgetik.ui.components.ExpenseList
@@ -18,8 +24,9 @@ import com.avloga.budgetik.ui.components.ExpenseList
 @Composable
 fun AllExpensesScreen(
     navController: NavController,
-    expenses: List<Expense>
+    viewModel: ExpensesViewModel = viewModel() // та сама ViewModel
 ) {
+    val expenses by viewModel.expensesFlow.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -43,3 +50,4 @@ fun AllExpensesScreen(
         )
     }
 }
+

@@ -1,5 +1,6 @@
 package com.avloga.budgetik.ui.screens
 
+import ExpensesViewModel
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.avloga.budgetik.R
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
@@ -29,11 +31,12 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun MainScreen(
     navController: NavController,
-    userId: String
+    userId: String,
+    viewModel: ExpensesViewModel = viewModel()
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val expenses by FirebaseFirestoreManager.getExpensesFlow().collectAsState(initial = emptyList())
+    val expenses by viewModel.expensesFlow.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
 

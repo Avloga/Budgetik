@@ -1,5 +1,6 @@
 package com.avloga.budgetik.data.model
 
+import java.io.Serializable
 data class Expense(
     val userName: String = "",
     val amount: Double = 0.0,
@@ -8,4 +9,4 @@ data class Expense(
     val time: String = "",
     val comment: String = "",
     val type: String = "" // "income" або "outcome"
-)
+) : Serializable
