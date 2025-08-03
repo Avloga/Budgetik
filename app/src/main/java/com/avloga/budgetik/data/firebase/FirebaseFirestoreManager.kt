@@ -1,28 +1,50 @@
 package com.avloga.budgetik.data.firebase
 
-import android.util.Log
-import com.avloga.budgetik.data.model.Group
-import com.avloga.budgetik.data.model.Expence
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
+import com.avloga.budgetik.data.model.Expense
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
 object FirebaseFirestoreManager {
+
     private val db = Firebase.firestore
 
-    fun getUserData(uid: String, onSuccess: (UserData) -> Unit, onError: (String) -> Unit) {
-        db.collection("users").document(uid)
-            .get()
-            .addOnSuccessListener { doc ->
-                val name = doc.getString("name") ?: "?"
-                val budget = doc.getDouble("budget") ?: 0.0
-                onSuccess(UserData(name, budget))
-            }
-            .addOnFailureListener {
-                onError(it.message ?: "Помилка отримання даних")
-            }
-    }
-}
+    // Колекція для збереження витрат
+    private val expensesCollection = db.collection("expenses")
 
-data class UserData(val name: String, val budget: Double)
+    /**
+     * Додає витрату до Firestore
+     *
+     * @param expense - об'єкт витрати
+     * @param onSuccess - викликається, якщо все ок
+     * @param onFailure - викликається з повідомленням, якщо сталася помилка
+     */
+    suspend fun addExpense(
+        expense: Expense,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        try {
+            expensesCollection
+                .add(expense)
+                .await()
+            onSuccess()
+        } catch (e: Exception) {
+            onFailure(e.message ?: "Невідома помилка при додаванні витрати")
+        }
+    }
+
+    // Можеш додати інші методи, наприклад для отримання всіх витрат:
+    /*
+    suspend fun getExpenses(): List<Expense> {
+        return try {
+            expensesCollection
+                .get()
+                .await()
+                .toObjects(Expense::class.java)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    */
+}

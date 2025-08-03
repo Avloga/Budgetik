@@ -1,11 +1,11 @@
 package com.avloga.budgetik.data.model
 
-import com.google.firebase.Timestamp
-
-data class Expence(
+data class Expense(
+    val userName: String = "",
     val amount: Double = 0.0,
-    val category: String = "",
-    val description: String = "",
-    val timestamp: Timestamp = Timestamp.now(),
-    val createdBy: String = ""
+    val category: String? = "",
+    val date: String = "",
+    val time: String = "",
+    val comment: String = "",
+    val type: String = "" // "income" або "outcome"
 )

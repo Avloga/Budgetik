@@ -1,28 +1,42 @@
 package com.avloga.budgetik.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.avloga.budgetik.R
+import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
+import com.avloga.budgetik.data.model.Expense
 import com.avloga.budgetik.ui.components.*
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun MainScreen(
     navController: NavController,
-    userId: String
+    userId: String,
+    expenses: List<Expense> = emptyList()  // Передавай сюди реальні дані
 ) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     // Визначаємо дані користувача залежно від userId
     val (name, balance, avatarRes) = when (userId.lowercase()) {
         "pasha" -> Triple("Паша", "9 500 ₴", R.drawable.pasha_avatar)
@@ -30,50 +44,121 @@ fun MainScreen(
         else -> Triple("Користувач", "0 ₴", R.drawable.default_avatar)
     }
 
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Фільтруємо витрати по поточному користувачу
+    val userExpenses = expenses.filter { it.userName == name }
+
+    // Останні витрати — показуємо всі (income + outcome)
+    val recentExpenses = userExpenses.sortedByDescending { it.date + it.time }.take(10)
+
+    // Статистика за категоріями — тільки outcome
+    val expensesOutcome = userExpenses.filter { it.type == "outcome" }
+    val categoryStats = expensesOutcome.groupBy { it.category ?: "Інше" }
+        .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+    // Загальна сума балансу — для прикладу можна порахувати
+    val totalBalance = userExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
+    val balanceText = "${totalBalance.toInt()} ₴"
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(top = 24.dp)  // ось тут додано відступ зверху
-        ) {
-            UserHeader(
-                name = name,
-                balance = balance,
-                avatarRes = avatarRes
-            )
+        Box {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 24.dp)
+                    .then(if (showDialog) Modifier.blur(6.dp) else Modifier)
+            ) {
+                UserHeader(
+                    name = name,
+                    balance = balanceText,
+                    avatarRes = avatarRes
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            SectionTitle("Останні витрати")
-            Spacer(modifier = Modifier.height(8.dp))
+                // Кнопка "+ Додати"
+                Button(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("+ Додати", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                }
 
-            sampleExpenses.forEach { expense ->
-                ExpenseRow(expense)
-                Divider(color = Color.LightGray, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SectionTitle("Останні операції")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (recentExpenses.isEmpty()) {
+                    Text("Поки що немає операцій.", color = Color.Gray)
+                } else {
+                    recentExpenses.forEach { expense ->
+                        ExpenseRow(
+                            expense = ExpenseItem(
+                                userName = expense.userName,
+                                category = expense.category ?: "",
+                                amount = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString(),
+                                date = expense.date,
+                                avatarRes = if (expense.userName == "Паша") R.drawable.pasha_avatar else R.drawable.tanya_avatar
+                            )
+                        )
+                        Divider(color = Color.LightGray, thickness = 1.dp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SectionTitle("Статистика за категоріями")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (categoryStats.isEmpty()) {
+                    Text("Немає витрат для статистики.", color = Color.Gray)
+                } else {
+                    categoryStats.forEach { (category, amount) ->
+                        CategoryRow(
+                            name = category,
+                            amount = "${amount.toInt()} ₴"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Цілі заощаджень — для прикладу можна замінити на реальні дані
+                //SavingsGoalsSection()
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Графік витрат (плейсхолдер)
+                //ExpensesChartSection()
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SectionTitle("Статистика за категоріями")
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CategoryRow(name = "Їжа", amount = "3 200 ₴")
-            CategoryRow(name = "Одяг", amount = "1 500 ₴")
-            CategoryRow(name = "Транспорт", amount = "800 ₴")
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Нова секція: Цілі заощаджень
-            SavingsGoalsSection()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Нова секція: Графік витрат (плейсхолдер)
-            ExpensesChartSection()
+            if (showDialog) {
+                AddExpenseDialog(
+                    userId = name,
+                    onDismiss = { showDialog = false },
+                    onSubmit = { expense ->
+                        scope.launch {
+                            FirebaseFirestoreManager.addExpense(
+                                expense,
+                                onSuccess = {
+                                    Toast.makeText(context, "Операцію додано", Toast.LENGTH_SHORT).show()
+                                    showDialog = false
+                                },
+                                onFailure = {
+                                    Toast.makeText(context, "Помилка збереження", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -87,75 +172,4 @@ fun SectionTitle(title: String) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     )
-}
-
-@Composable
-fun SavingsGoalsSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFE8F5E9))
-            .padding(16.dp)
-    ) {
-        Text(
-            "Цілі заощаджень",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        GoalProgress(name = "Відпустка", current = 4000f, goal = 20000f)
-        GoalProgress(name = "Новий ноутбук", current = 8000f, goal = 15000f)
-    }
-}
-
-@Composable
-fun GoalProgress(name: String, current: Float, goal: Float) {
-    val progress = (current / goal).coerceIn(0f, 1f)
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = name)
-        Spacer(modifier = Modifier.height(4.dp))
-        LinearProgressIndicator(
-            progress = progress,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp)),
-            color = Color(0xFF388E3C),
-            trackColor = Color(0xFFC8E6C9)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = "${current.toInt()} ₴ / ${goal.toInt()} ₴", style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
-fun ExpensesChartSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFBBDEFB))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Графік витрат (placeholder)",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFF0D47A1)
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        // Можеш тут додати графік пізніше (наприклад, з MPAndroidChart або іншим)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .background(Color(0xFF90CAF9), RoundedCornerShape(8.dp))
-        )
-    }
 }
