@@ -18,26 +18,23 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = BalanceGreen,
+    secondary = LightMintGreen,
+    tertiary = CategoryPink,
+    background = LightMintGreen,
+    surface = LightMintGreen,
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onSecondary = DarkGray,
+    onTertiary = androidx.compose.ui.graphics.Color.White,
+    onBackground = DarkGray,
+    onSurface = DarkGray
 )
 
 @Composable
 fun BudgetikTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Вимкнув dynamic color для використання нашої кольорової схеми
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

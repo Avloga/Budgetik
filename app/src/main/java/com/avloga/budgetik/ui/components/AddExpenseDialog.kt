@@ -31,6 +31,7 @@ fun AddExpenseDialog(
     onDismiss: () -> Unit,
     onSubmit: (Expense) -> Unit
 ) {
+    val context = LocalContext.current
     var amountText by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("outcome") } // витрата за замовчуванням
     val types = listOf("Витрата", "Поповнення")
@@ -49,7 +50,7 @@ fun AddExpenseDialog(
                 onClick = {
                     val now = Date()
                     val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                     val amount = amountText.toDoubleOrNull() ?: 0.0
 
                     val expense = Expense(
@@ -61,6 +62,7 @@ fun AddExpenseDialog(
                         comment = commentText,
                         type = selectedType
                     )
+                    
                     onSubmit(expense)
                 }
             ) {

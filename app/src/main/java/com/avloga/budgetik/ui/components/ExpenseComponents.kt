@@ -34,10 +34,11 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ExpenseRow(expense: Expense) {
-    val amountColor = if (expense.type == "income") Color(0xFF2E7D32) else Color(0xFFC62828)
+    val amountColor = if (expense.type == "income") com.avloga.budgetik.ui.theme.IncomeGreen else com.avloga.budgetik.ui.theme.ExpenseRed
     var showDialog by remember { mutableStateOf(false) }
     val amountText = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString()
 
@@ -67,7 +68,12 @@ fun ExpenseRow(expense: Expense) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = 12.dp, horizontal = 8.dp)
+            .background(
+                color = androidx.compose.ui.graphics.Color.White,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+            )
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
@@ -81,12 +87,16 @@ fun ExpenseRow(expense: Expense) {
         Spacer(Modifier.width(8.dp))
 
         Column(modifier = Modifier.width(80.dp)) {
-            Text(text = expense.userName, fontWeight = FontWeight.Bold)
+            Text(
+                text = expense.userName, 
+                fontWeight = FontWeight.Bold,
+                color = com.avloga.budgetik.ui.theme.DarkGray
+            )
             expense.category?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = com.avloga.budgetik.ui.theme.LightGray
                 )
             }
         }
@@ -98,21 +108,21 @@ fun ExpenseRow(expense: Expense) {
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 8.dp)
-                .clickable { showDialog = true },
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.DarkGray
+                .clickable { if (expense.comment?.isNotEmpty() == true) showDialog = true },
+            color = com.avloga.budgetik.ui.theme.DarkGray
         )
 
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = amountText,
+                fontSize = 16.sp,
                 color = amountColor,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = expense.time,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = com.avloga.budgetik.ui.theme.LightGray
             )
         }
     }
@@ -167,8 +177,8 @@ fun ExpenseList(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(vertical = 8.dp)
+                        .background(com.avloga.budgetik.ui.theme.LightMintGreen)
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
                 ) {
                     Text(
                         text = dateText,
@@ -176,7 +186,7 @@ fun ExpenseList(
                             fontWeight = FontWeight.Bold
                         ),
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color.DarkGray,
+                        color = com.avloga.budgetik.ui.theme.DarkGray,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -199,7 +209,7 @@ fun ExpenseList(
                         .padding(vertical = 4.dp)
                         .wrapContentWidth(Alignment.CenterHorizontally),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = com.avloga.budgetik.ui.theme.LightGray
                 )
             }
         }

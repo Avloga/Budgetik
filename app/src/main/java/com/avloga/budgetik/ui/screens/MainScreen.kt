@@ -2,18 +2,16 @@ package com.avloga.budgetik.ui.screens
 
 import ExpensesViewModel
 import android.widget.Toast
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,20 +19,14 @@ import androidx.navigation.NavController
 import com.avloga.budgetik.R
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
 import com.avloga.budgetik.ui.components.*
+import com.avloga.budgetik.ui.theme.LightMintGreen
 import kotlinx.coroutines.launch
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import androidx.compose.runtime.SideEffect
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.tasks.await
+import androidx.compose.foundation.clickable
+import com.avloga.budgetik.ui.theme.DarkGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,207 +54,254 @@ fun MainScreen(
     }
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm") // або твій формат часу
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+
+    // Функція для безпечного парсингу часу (підтримує як HH:mm, так і HH:mm:ss)
+    fun parseTimeSafely(timeStr: String): LocalTime {
+        return try {
+            // Спочатку пробуємо новий формат з секундами
+            LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"))
+        } catch (e: Exception) {
+            try {
+                // Якщо не вдалося, пробуємо старий формат без секунд
+                LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
+            } catch (e: Exception) {
+                // Якщо і це не вдалося, повертаємо мінімальний час
+                LocalTime.MIN
+            }
+        }
+    }
 
     val allExpenses = expenses.sortedByDescending { expense ->
         try {
             val date = LocalDate.parse(expense.date, dateFormatter)
-            val time = LocalTime.parse(expense.time, timeFormatter)
+            val time = parseTimeSafely(expense.time)
             LocalDateTime.of(date, time)
         } catch (e: Exception) {
-            // Якщо парсинг не вдався — ставимо мінімальне значення, щоб ці елементи були внизу
             LocalDateTime.MIN
         }
     }
-    val recentExpenses = allExpenses.take(5)
-
-    val expensesOutcome = allExpenses.filter { it.type == "outcome" }
-    val categoryStats = expensesOutcome.groupBy { it.category ?: "Інше" }
-        .mapValues { entry -> entry.value.sumOf { it.amount } }
 
     val totalBalance = allExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
     val balanceText = "${totalBalance.toInt()} ₴"
 
+    // Розрахунок доходів та витрат для кругового графіка
+    val totalIncome = allExpenses.filter { it.type == "income" }.sumOf { it.amount }
+    val totalExpense = allExpenses.filter { it.type == "outcome" }.sumOf { it.amount }
+    val incomeText = "${totalIncome.toInt()} грн"
+    val expenseText = "${totalExpense.toInt()} грн"
+
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize(),
+        color = LightMintGreen
     ) {
-        Box {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 90.dp)
-            ) {
-//                UserHeader(
-//                    name = name,
-//                    balance = balanceText,
-//                    avatarRes = avatarRes
-//                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                ) {
-                    Text("+ Додати", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Новий рядок із трьома кнопками
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { /* поки що без функціоналу */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Кнопка 1")
-                    }
-                    Button(
-                        onClick = { /* поки що без функціоналу */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Кнопка 2")
-                    }
-                    Button(
-                        onClick = { /* поки що без функціоналу */ },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Кнопка 3")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SectionTitleWithAction(
-                    title = "Останні операції",
-                    actionText = "Усі >",
-                    onActionClick = {
-                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                            "expenses",
-                            allExpenses
-                        )
-                        navController.navigate("all_expenses")
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column {
-                    recentExpenses.forEach { expense ->
-                        ExpenseRow(expense = expense)
-                        //HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SectionTitle("Статистика за категоріями")
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (categoryStats.isEmpty()) {
-                    Text("Немає витрат для статистики.", color = Color.Gray)
-                } else {
-                    categoryStats.forEach { (category, amount) ->
-                        CategoryRow(
-                            name = category,
-                            amount = "${amount.toInt()} ₴"
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // Верхній AppBar з аватаркою, ім'ям і кнопкою налаштувань
-            CenterAlignedTopAppBar(
-                title = {
-                    // Залиш порожнім, або додай щось дрібне
-                },
-                navigationIcon = {
-                    // Замість navigationIcon використовуємо весь вміст
-                    Row(
-                        modifier = Modifier
-                            .padding(end = 60.dp) // ВАЖЛИВО
-                            .fillMaxWidth()
-                            .height(80.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Ось тут буде вже сам UserHeader з нуля або inline
-                        UserHeader(
-                            name = name,
-                            balance = balanceText,
-                            avatarRes = avatarRes,
-                            modifier = Modifier
-                                .padding(start = 0.dp)
-                                .fillMaxWidth()
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        // TODO: Перехід у налаштування
-                    }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Налаштування")
-                    }
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Верхня панель
+            CustomTopBar(
+                modifier = Modifier.fillMaxWidth(),
+                onMenuClick = {
+                    // TODO: Відкрити меню (поки що без функціоналу)
                 }
             )
 
+            // Основний контент
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
 
-            if (showDialog) {
-                AddExpenseDialog(
-                    userId = name,
-                    onDismiss = { showDialog = false },
-                    onSubmit = { expense ->
-                        scope.launch {
-                            FirebaseFirestoreManager.addExpense(
-                                expense,
-                                onSuccess = {
-                                    Toast.makeText(context, "Операцію додано", Toast.LENGTH_SHORT).show()
-                                    showDialog = false
-                                },
-                                onFailure = {
-                                    Toast.makeText(context, "Помилка збереження", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        }
+                // Сітка категорій та круговий графік
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Лівий стовпець категорій
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CategoryText(
+                            text = "🛒",
+                            color = com.avloga.budgetik.ui.theme.CategoryPink,
+                            contentDescription = "Покупки"
+                        )
+                        CategoryText(
+                            text = "🏠",
+                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
+                            contentDescription = "Будинок"
+                        )
+                        CategoryText(
+                            text = "🍽️",
+                            color = com.avloga.budgetik.ui.theme.LightGray,
+                            contentDescription = "Їжа"
+                        )
+                        CategoryText(
+                            text = "🧴",
+                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
+                            contentDescription = "Особиста гігієна"
+                        )
+                        CategoryText(
+                            text = "⚽",
+                            color = com.avloga.budgetik.ui.theme.CategoryTeal,
+                            contentDescription = "Спорт"
+                        )
+                        CategoryText(
+                            text = "🚗",
+                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
+                            contentDescription = "Машина"
+                        )
                     }
+
+                    // Круговий графік по центру
+                    CircularChart(
+                        income = incomeText,
+                        expense = expenseText
+                    )
+
+                    // Правий стовпець категорій
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CategoryText(
+                            text = "🏥",
+                            color = com.avloga.budgetik.ui.theme.CategoryRed,
+                            contentDescription = "Здоров'я"
+                        )
+                        CategoryText(
+                            text = "📞",
+                            color = com.avloga.budgetik.ui.theme.LightGray,
+                            contentDescription = "Телефон"
+                        )
+                        CategoryText(
+                            text = "🐱",
+                            color = com.avloga.budgetik.ui.theme.CategoryTeal,
+                            contentDescription = "Тварини"
+                        )
+                        CategoryText(
+                            text = "🎁",
+                            color = com.avloga.budgetik.ui.theme.CategoryPurple,
+                            contentDescription = "Подарунки"
+                        )
+                        CategoryText(
+                            text = "👕",
+                            color = com.avloga.budgetik.ui.theme.CategoryPurple,
+                            contentDescription = "Одяг"
+                        )
+                        CategoryText(
+                            text = "🍺",
+                            color = com.avloga.budgetik.ui.theme.CategoryOrange,
+                            contentDescription = "Розваги"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Панель балансу
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Ліва іконка (кнопка навігації)
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Перейти до всіх операцій",
+                        tint = DarkGray,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "expenses",
+                                    allExpenses
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "userId",
+                                    userId
+                                )
+                                navController.navigate("all_expenses")
+                            }
+                    )
+                    
+                    // Панель балансу (кнопка навігації)
+                    BalancePanel(
+                        balance = balanceText,
+                        onClick = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "expenses",
+                                allExpenses
+                            )
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "userId",
+                                userId
+                            )
+                            navController.navigate("all_expenses")
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Права іконка (кнопка навігації)
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Перейти до всіх операцій",
+                        tint = DarkGray,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "expenses",
+                                    allExpenses
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "userId",
+                                    userId
+                                )
+                                navController.navigate("all_expenses")
+                            }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Кнопки дій
+                ActionButtons(
+                    onExpenseClick = { showDialog = true },
+                    onIncomeClick = { showDialog = true },
+                    modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
-    }
-}
 
-@Composable
-fun SectionTitleWithAction(title: String, actionText: String, onActionClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
-        Text(
-            text = actionText,
-            style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF2E7D32)),
-            modifier = Modifier.clickable { onActionClick() }
-        )
+        // Діалог додавання витрат/доходів
+        if (showDialog) {
+            AddExpenseDialog(
+                userId = name,
+                onDismiss = { showDialog = false },
+                onSubmit = { expense ->
+                    scope.launch {
+                        FirebaseFirestoreManager.addExpense(
+                            expense,
+                            onSuccess = {
+                                Toast.makeText(context, "Операцію додано", Toast.LENGTH_SHORT).show()
+                                showDialog = false
+                            },
+                            onFailure = {
+                                Toast.makeText(context, "Помилка збереження", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                }
+            )
+        }
     }
-}
-
-@Composable
-fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    )
 }
