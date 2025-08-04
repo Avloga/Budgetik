@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.BalanceGreen
 import java.util.Locale
 import com.avloga.budgetik.ui.components.CategoryPercentage
+import com.avloga.budgetik.ui.components.SideMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +46,7 @@ fun MainScreen(
     val expenses by viewModel.expensesFlow.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
+    var showSideMenu by remember { mutableStateOf(false) }
 
     val name = when (userId.lowercase()) {
         "pasha" -> "Паша"
@@ -186,7 +188,7 @@ fun MainScreen(
             CustomTopBar(
                 modifier = Modifier.fillMaxWidth(),
                 onMenuClick = {
-                    // TODO: Відкрити меню (поки що без функціоналу)
+                    showSideMenu = !showSideMenu
                 }
             )
 
@@ -325,5 +327,11 @@ fun MainScreen(
                 }
             )
         }
+
+        // Бокове меню
+        SideMenu(
+            isVisible = showSideMenu,
+            onDismiss = { showSideMenu = false }
+        )
     }
 }
