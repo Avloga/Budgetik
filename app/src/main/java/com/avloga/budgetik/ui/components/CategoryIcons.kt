@@ -124,7 +124,7 @@ fun CategoryText(
             )
         }
         
-        // Відображення відсотків під категорією
+        // Відображення відсотків під категорією (тільки якщо відсоток не null)
         if (percentage != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(

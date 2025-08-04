@@ -21,6 +21,16 @@ val CategoryOrange = Color(0xFFFFB74D)
 val CategoryPurple = Color(0xFFCE93D8)
 val CategoryTeal = Color(0xFF80CBC4)
 
+// Додаткові кольори для категорій
+val CategoryGreen = Color(0xFF81C784)
+val CategoryYellow = Color(0xFFFFF176)
+val CategoryIndigo = Color(0xFF9FA8DA)
+val CategoryCyan = Color(0xFF4DD0E1)
+val CategoryLime = Color(0xFFCDDC39)
+val CategoryAmber = Color(0xFFFFD54F)
+val CategoryDeepOrange = Color(0xFFFF8A65)
+val CategoryBrown = Color(0xFFBCAAA4)
+
 // Старі кольори (залишаю для сумісності)
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

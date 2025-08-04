@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.BalanceGreen
 import java.util.Locale
+import com.avloga.budgetik.ui.components.CategoryPercentage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,20 +142,37 @@ fun MainScreen(
     val categories = remember {
         listOf(
             CategoryItem("📞", com.avloga.budgetik.ui.theme.CategoryPink, "Зв'язок"),           // позиція 0
-            CategoryItem("🍽️", com.avloga.budgetik.ui.theme.CategoryBlue, "Їжа"),             // позиція 1
-            CategoryItem("☕", com.avloga.budgetik.ui.theme.LightGray, "Кафе"),                // позиція 2
+            CategoryItem("🍽️", com.avloga.budgetik.ui.theme.CategoryGreen, "Їжа"),             // позиція 1
+            CategoryItem("☕", com.avloga.budgetik.ui.theme.CategoryOrange, "Кафе"),                // позиція 2
             CategoryItem("🚌", com.avloga.budgetik.ui.theme.CategoryBlue, "Транспорт"),        // позиція 3
-            CategoryItem("🚕", com.avloga.budgetik.ui.theme.CategoryTeal, "Таксі"),            // позиція 4
-            CategoryItem("🧴", com.avloga.budgetik.ui.theme.CategoryBlue, "Гігієна"),          // позиція 5
+            CategoryItem("🚕", com.avloga.budgetik.ui.theme.CategoryYellow, "Таксі"),            // позиція 4
+            CategoryItem("🧴", com.avloga.budgetik.ui.theme.CategoryCyan, "Гігієна"),          // позиція 5
             CategoryItem("🐱", com.avloga.budgetik.ui.theme.CategoryTeal, "Улюбленці"),        // позиція 6
             CategoryItem("👕", com.avloga.budgetik.ui.theme.CategoryPurple, "Одяг"),           // позиція 7
-            CategoryItem("🎁", com.avloga.budgetik.ui.theme.CategoryPurple, "Подарунки"),      // позиція 8
-            CategoryItem("⚽", com.avloga.budgetik.ui.theme.CategoryTeal, "Спорт"),            // позиція 9
-            CategoryItem("🏥", com.avloga.budgetik.ui.theme.CategoryRed, "Здоров'я"),          // позиція 10
-            CategoryItem("🎮", com.avloga.budgetik.ui.theme.CategoryPurple, "Ігри"),           // позиція 11
-            CategoryItem("🍺", com.avloga.budgetik.ui.theme.CategoryOrange, "Розваги"),        // позиція 12
-            CategoryItem("🏠", com.avloga.budgetik.ui.theme.CategoryBlue, "Житло")             // позиція 13
+            CategoryItem("🎁", com.avloga.budgetik.ui.theme.CategoryRed, "Подарунки"),      // позиція 8
+            CategoryItem("⚽", com.avloga.budgetik.ui.theme.CategoryLime, "Спорт"),            // позиція 9
+            CategoryItem("🏥", com.avloga.budgetik.ui.theme.CategoryDeepOrange, "Здоров'я"),          // позиція 10
+            CategoryItem("🎮", com.avloga.budgetik.ui.theme.CategoryIndigo, "Ігри"),           // позиція 11
+            CategoryItem("🍺", com.avloga.budgetik.ui.theme.CategoryAmber, "Розваги"),        // позиція 12
+            CategoryItem("🏠", com.avloga.budgetik.ui.theme.CategoryBrown, "Житло")             // позиція 13
         )
+    }
+
+    // Створення списку категорій з відсотками для кругової діаграми
+    val categoryPercentagesForChart = remember(categoryPercentages, categories) {
+        categories.map { category ->
+            val percentageText = categoryPercentages[category.contentDescription] ?: "0%"
+            val percentage = when {
+                percentageText == "0%" -> 0f
+                percentageText == "<1%" -> 0.5f // Показуємо як 0.5% для візуалізації
+                else -> percentageText.removeSuffix("%").toFloatOrNull() ?: 0f
+            }
+            CategoryPercentage(
+                name = category.contentDescription,
+                percentage = percentage,
+                color = category.color
+            )
+        }
     }
 
     Surface(
@@ -196,7 +214,7 @@ fun MainScreen(
                     categories = categories,
                     incomeText = incomeText,
                     expenseText = expenseText,
-                    categoryPercentages = categoryPercentages,
+                    categoryPercentages = categoryPercentagesForChart,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(450.dp)
