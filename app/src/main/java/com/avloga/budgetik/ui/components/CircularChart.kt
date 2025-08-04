@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.avloga.budgetik.ui.theme.BlueGray
 import com.avloga.budgetik.ui.theme.DarkGray
 import com.avloga.budgetik.ui.theme.LightGray
 import com.avloga.budgetik.ui.theme.IncomeGreen
@@ -31,12 +32,12 @@ fun CircularChart(
         Canvas(
             modifier = Modifier.size(220.dp)
         ) {
-            val strokeWidth = 24f
+            val strokeWidth = 115f
             val radius = (size.minDimension - strokeWidth) / 2
             
             // Малюємо сіре кільце
             drawCircle(
-                color = LightGray,
+                color = BlueGray,
                 radius = radius,
                 style = Stroke(
                     width = strokeWidth,

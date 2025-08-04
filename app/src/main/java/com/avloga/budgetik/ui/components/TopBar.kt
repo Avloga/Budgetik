@@ -52,8 +52,8 @@ fun CustomTopBar(
                 
                 Column {
                     Text(
-                        text = "Monefy",
-                        fontSize = 22.sp,
+                        text = "Budgetik",
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = androidx.compose.ui.graphics.Color.White
                     )
@@ -64,14 +64,6 @@ fun CustomTopBar(
                     )
                 }
             }
-            
-            // Центральна частина - місяць
-            Text(
-                text = "Серпень",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = androidx.compose.ui.graphics.Color.White
-            )
             
             // Права частина - іконки
             Row(

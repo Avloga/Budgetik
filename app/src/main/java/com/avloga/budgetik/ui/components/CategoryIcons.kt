@@ -103,20 +103,37 @@ fun CategoryText(
     text: String,
     color: Color,
     contentDescription: String,
+    percentage: String? = null,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(color.copy(alpha = 0.15f)),
-        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Normal
-        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
+        
+        // Відображення відсотків під категорією
+        if (percentage != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = percentage,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
+                color = com.avloga.budgetik.ui.theme.DarkGray
+            )
+        }
     }
 }
 

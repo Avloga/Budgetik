@@ -37,8 +37,13 @@ fun AddExpenseDialog(
     val types = listOf("Витрата", "Поповнення")
     var expandedType by remember { mutableStateOf(false) }
 
-    val categories = listOf("Їжа", "Одяг", "Транспорт", "Інше")
-    var selectedCategory by remember { mutableStateOf(categories.first()) }
+    val expenseCategories = listOf(
+        "Зв'язок", "Їжа", "Кафе", "Транспорт", "Таксі", "Гігієна", 
+        "Улюбленці", "Одяг", "Подарунки", "Спорт", "Здоров'я", 
+        "Ігри", "Розваги", "Житло"
+    )
+    val incomeCategories = listOf("Зарплата", "Подарунок", "Заощадження")
+    var selectedCategory by remember { mutableStateOf(expenseCategories.first()) }
     var expandedCategory by remember { mutableStateOf(false) }
 
     var commentText by remember { mutableStateOf("") }
@@ -109,6 +114,8 @@ fun AddExpenseDialog(
                                 text = { Text(typeName) },
                                 onClick = {
                                     selectedType = if (index == 0) "outcome" else "income"
+                                    // Автоматично змінюємо категорію при зміні типу
+                                    selectedCategory = if (selectedType == "outcome") expenseCategories.first() else incomeCategories.first()
                                     expandedType = false
                                 }
                             )
@@ -139,14 +146,26 @@ fun AddExpenseDialog(
                         expanded = expandedCategory,
                         onDismissRequest = { expandedCategory = false }
                     ) {
-                        categories.forEach { category ->
-                            DropdownMenuItem(
-                                text = { Text(category) },
-                                onClick = {
-                                    selectedCategory = category
-                                    expandedCategory = false
-                                }
-                            )
+                        if (selectedType == "outcome") {
+                            expenseCategories.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category) },
+                                    onClick = {
+                                        selectedCategory = category
+                                        expandedCategory = false
+                                    }
+                                )
+                            }
+                        } else {
+                            incomeCategories.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category) },
+                                    onClick = {
+                                        selectedCategory = category
+                                        expandedCategory = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }

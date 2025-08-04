@@ -27,6 +27,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.clickable
 import com.avloga.budgetik.ui.theme.DarkGray
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.avloga.budgetik.ui.theme.BalanceGreen
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +95,68 @@ fun MainScreen(
     val incomeText = "${totalIncome.toInt()} грн"
     val expenseText = "${totalExpense.toInt()} грн"
 
+    // Отримуємо поточну дату в потрібному форматі (наприклад: "Понеділок, 4 серпня")
+    val currentDate = remember {
+        val now = LocalDate.now()
+        val locale = Locale("uk")
+        val dayOfWeek = now.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, locale)
+            .replaceFirstChar { it.uppercase(locale) }
+        val day = now.dayOfMonth.toString()
+        val month = now.month.getDisplayName(java.time.format.TextStyle.FULL, locale)
+            .lowercase(locale)
+            .replaceFirstChar { it.uppercase(locale) }
+        "$dayOfWeek, $day $month"
+    }
+
+    // Розрахунок відсотків для кожної категорії
+    val categoryPercentages = remember(allExpenses) {
+        val totalExpenses = allExpenses.filter { it.type == "outcome" }.sumOf { it.amount }
+        if (totalExpenses > 0) {
+            val categoryTotals = mutableMapOf<String, Double>()
+            
+            // Підраховуємо суму для кожної категорії
+            allExpenses.filter { it.type == "outcome" }.forEach { expense ->
+                val category = expense.category ?: "Інше"
+                categoryTotals[category] = categoryTotals.getOrDefault(category, 0.0) + expense.amount
+            }
+            
+            // Розраховуємо відсотки
+            categoryTotals.mapValues { (_, amount) ->
+                val percentage = (amount / totalExpenses * 100)
+                when {
+                    percentage >= 1 -> "${percentage.toInt()}%"
+                    percentage > 0 -> "<1%"
+                    else -> "0%"
+                }
+            }
+        } else {
+            emptyMap()
+        }
+    }
+
+    // Список категорій для легкого переміщення
+    // Щоб перемістити категорію, просто змініть її позицію в списку
+    // Наприклад, щоб перемістити "Зв'язок" з першої позиції в останню:
+    // - Перемістіть CategoryItem("📞", ...) в кінець списку
+    val categories = remember {
+        listOf(
+            CategoryItem("📞", com.avloga.budgetik.ui.theme.CategoryPink, "Зв'язок"),           // позиція 0
+            CategoryItem("🍽️", com.avloga.budgetik.ui.theme.CategoryBlue, "Їжа"),             // позиція 1
+            CategoryItem("☕", com.avloga.budgetik.ui.theme.LightGray, "Кафе"),                // позиція 2
+            CategoryItem("🚌", com.avloga.budgetik.ui.theme.CategoryBlue, "Транспорт"),        // позиція 3
+            CategoryItem("🚕", com.avloga.budgetik.ui.theme.CategoryTeal, "Таксі"),            // позиція 4
+            CategoryItem("🧴", com.avloga.budgetik.ui.theme.CategoryBlue, "Гігієна"),          // позиція 5
+            CategoryItem("🐱", com.avloga.budgetik.ui.theme.CategoryTeal, "Улюбленці"),        // позиція 6
+            CategoryItem("👕", com.avloga.budgetik.ui.theme.CategoryPurple, "Одяг"),           // позиція 7
+            CategoryItem("🎁", com.avloga.budgetik.ui.theme.CategoryPurple, "Подарунки"),      // позиція 8
+            CategoryItem("⚽", com.avloga.budgetik.ui.theme.CategoryTeal, "Спорт"),            // позиція 9
+            CategoryItem("🏥", com.avloga.budgetik.ui.theme.CategoryRed, "Здоров'я"),          // позиція 10
+            CategoryItem("🎮", com.avloga.budgetik.ui.theme.CategoryPurple, "Ігри"),           // позиція 11
+            CategoryItem("🍺", com.avloga.budgetik.ui.theme.CategoryOrange, "Розваги"),        // позиція 12
+            CategoryItem("🏠", com.avloga.budgetik.ui.theme.CategoryBlue, "Житло")             // позиція 13
+        )
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = LightMintGreen
@@ -114,94 +180,32 @@ fun MainScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
 
-                // Сітка категорій та круговий графік
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Лівий стовпець категорій
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CategoryText(
-                            text = "🛒",
-                            color = com.avloga.budgetik.ui.theme.CategoryPink,
-                            contentDescription = "Покупки"
-                        )
-                        CategoryText(
-                            text = "🏠",
-                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
-                            contentDescription = "Будинок"
-                        )
-                        CategoryText(
-                            text = "🍽️",
-                            color = com.avloga.budgetik.ui.theme.LightGray,
-                            contentDescription = "Їжа"
-                        )
-                        CategoryText(
-                            text = "🧴",
-                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
-                            contentDescription = "Особиста гігієна"
-                        )
-                        CategoryText(
-                            text = "⚽",
-                            color = com.avloga.budgetik.ui.theme.CategoryTeal,
-                            contentDescription = "Спорт"
-                        )
-                        CategoryText(
-                            text = "🚗",
-                            color = com.avloga.budgetik.ui.theme.CategoryBlue,
-                            contentDescription = "Машина"
-                        )
-                    }
+                // Поточна дата
+                Text(
+                    text = currentDate,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = BalanceGreen
+                )
 
-                    // Круговий графік по центру
-                    CircularChart(
-                        income = incomeText,
-                        expense = expenseText
-                    )
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    // Правий стовпець категорій
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CategoryText(
-                            text = "🏥",
-                            color = com.avloga.budgetik.ui.theme.CategoryRed,
-                            contentDescription = "Здоров'я"
-                        )
-                        CategoryText(
-                            text = "📞",
-                            color = com.avloga.budgetik.ui.theme.LightGray,
-                            contentDescription = "Телефон"
-                        )
-                        CategoryText(
-                            text = "🐱",
-                            color = com.avloga.budgetik.ui.theme.CategoryTeal,
-                            contentDescription = "Тварини"
-                        )
-                        CategoryText(
-                            text = "🎁",
-                            color = com.avloga.budgetik.ui.theme.CategoryPurple,
-                            contentDescription = "Подарунки"
-                        )
-                        CategoryText(
-                            text = "👕",
-                            color = com.avloga.budgetik.ui.theme.CategoryPurple,
-                            contentDescription = "Одяг"
-                        )
-                        CategoryText(
-                            text = "🍺",
-                            color = com.avloga.budgetik.ui.theme.CategoryOrange,
-                            contentDescription = "Розваги"
-                        )
-                    }
-                }
+                // Сітка категорій з центральною діаграмою
+                CategoryGrid(
+                    categories = categories,
+                    incomeText = incomeText,
+                    expenseText = expenseText,
+                    categoryPercentages = categoryPercentages,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(450.dp)
+                )
+
+
+
+
+
 
                 Spacer(modifier = Modifier.weight(1f))
 

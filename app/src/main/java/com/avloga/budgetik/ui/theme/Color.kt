@@ -10,6 +10,9 @@ val BalanceGreen = Color(0xFF7FC99E)
 val ExpenseRed = Color(0xFFE57373)
 val IncomeGreen = Color(0xFF81C784)
 
+// Кольори для кругової діаграми
+val BlueGray = Color(0xFF6A7B8E)
+
 // Кольори для іконок категорій
 val CategoryPink = Color(0xFFF48FB1)
 val CategoryBlue = Color(0xFF90CAF9)

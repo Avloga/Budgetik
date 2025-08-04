@@ -80,5 +80,6 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore:24.10.2")
     implementation("io.coil-kt:coil-compose:2.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
 
 }
