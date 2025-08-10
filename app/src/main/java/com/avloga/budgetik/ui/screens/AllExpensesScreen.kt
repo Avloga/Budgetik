@@ -1,6 +1,5 @@
 package com.avloga.budgetik.ui.screens
 
-import ExpensesViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +31,23 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
+import com.avloga.budgetik.util.AccountType
+
+// Функція для безпечного парсингу часу (підтримує як HH:mm, так і HH:mm:ss)
+fun parseTimeSafely(timeStr: String): LocalTime {
+    return try {
+        // Спочатку пробуємо новий формат з секундами
+        LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"))
+    } catch (e: Exception) {
+        try {
+            // Якщо не вдалося, пробуємо старий формат без секунд
+            LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
+        } catch (e: Exception) {
+            // Якщо і це не вдалося, повертаємо мінімальний час
+            LocalTime.MIN
+        }
+    }
+}
 
 // Функція для форматування дати
 fun getFormattedDate(dateStr: String): String {
@@ -55,7 +71,13 @@ fun getFormattedDate(dateStr: String): String {
                 .replaceFirstChar { it.uppercase(locale) }
             val day = parsed.dayOfMonth.toString()
             val month = parsed.month.getDisplayName(java.time.format.TextStyle.FULL, locale)
-            "$dayOfWeek, $day $month"
+            
+            // Додаємо рік, якщо операція була в іншому році
+            if (parsed.year != today.year) {
+                "$dayOfWeek, $day $month ${parsed.year}"
+            } else {
+                "$dayOfWeek, $day $month"
+            }
         }
     }
 }
@@ -67,22 +89,6 @@ private val dateCache = mutableMapOf<String, String>()
 fun getFormattedDateCached(dateStr: String): String {
     return remember(dateStr) {
         dateCache.getOrPut(dateStr) { getFormattedDate(dateStr) }
-    }
-}
-
-// Функція для безпечного парсингу часу (підтримує як HH:mm, так і HH:mm:ss)
-fun parseTimeSafely(timeStr: String): LocalTime {
-    return try {
-        // Спочатку пробуємо новий формат з секундами
-        LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"))
-    } catch (e: Exception) {
-        try {
-            // Якщо не вдалося, пробуємо старий формат без секунд
-            LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
-        } catch (e: Exception) {
-            // Якщо і це не вдалося, повертаємо мінімальний час
-            LocalTime.MIN
-        }
     }
 }
 
@@ -146,14 +152,28 @@ fun ExpenseListWithStickyHeaders(
 fun AllExpensesScreen(
     navController: NavController,
     userId: String,
-    viewModel: ExpensesViewModel = viewModel()
+    selectedAccountString: String = "CASH",
+    viewModel: ExpensesViewModel
 ) {
-    val expenses by viewModel.expensesFlow.collectAsState()
+    val expenses by viewModel.expensesFlow.collectAsState() // Використовуємо операції з поточного рахунку
+    val selectedAccount by viewModel.selectedAccount.collectAsState()
+    
+    // Встановлюємо правильний рахунок на основі переданого параметра
+    LaunchedEffect(selectedAccountString) {
+        if (selectedAccountString.isNotEmpty()) {
+            viewModel.setSelectedAccountFromString(selectedAccountString)
+        }
+    }
+    
+    // Оновлюємо баланси при зміні рахунку
+    LaunchedEffect(selectedAccount) {
+        viewModel.refreshBalances()
+    }
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Визначаємо ім'я користувача
+    // Оптимізуємо обчислення, використовуючи remember
     val name = remember(userId) {
         when (userId.lowercase()) {
             "pasha" -> "Паша"
@@ -165,7 +185,25 @@ fun AllExpensesScreen(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss") }
 
-    val allExpenses = remember(expenses) {
+    // Функція для безпечного парсингу часу (підтримує як HH:mm, так і HH:mm:ss)
+    val parseTimeSafely = remember {
+        { timeStr: String ->
+            try {
+                // Спочатку пробуємо новий формат з секундами
+                LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"))
+            } catch (e: Exception) {
+                try {
+                    // Якщо не вдалося, пробуємо старий формат без секунд
+                    LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
+                } catch (e: Exception) {
+                    // Якщо і це не вдалося, повертаємо мінімальний час
+                    LocalTime.MIN
+                }
+            }
+        }
+    }
+
+    val sortedExpenses = remember(expenses) {
         expenses.sortedByDescending { expense ->
             try {
                 val date = LocalDate.parse(expense.date, dateFormatter)
@@ -177,19 +215,19 @@ fun AllExpensesScreen(
         }
     }
 
-    val totalBalance = remember(allExpenses) {
-        allExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
+    val totalBalance = remember(sortedExpenses) {
+        sortedExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
     }
     val balanceText = remember(totalBalance) { "${totalBalance.toInt()} грн" }
 
-    val groupedExpenses = remember(allExpenses) {
-        createGroupedExpenses(allExpenses)
+    val groupedExpenses = remember(sortedExpenses) {
+        createGroupedExpenses(sortedExpenses)
     }
 
     val sortedDates = remember(groupedExpenses) {
         groupedExpenses.keys.sortedByDescending { dateStr ->
             try {
-                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                LocalDate.parse(dateStr, dateFormatter)
             } catch (e: Exception) {
                 LocalDate.MIN
             }
@@ -205,7 +243,8 @@ fun AllExpensesScreen(
         ) {
             // Верхня панель
             CustomTopBar(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                selectedAccount = selectedAccount
             )
 
             // Основний контент з LazyColumn
@@ -223,6 +262,15 @@ fun AllExpensesScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        fun goBackWithSelectedAccount() {
+                            // Оновлюємо selectedAccount в ViewModel перед поверненням
+                            viewModel.setSelectedAccount(selectedAccount)
+                            // Використовуємо scope для асинхронного закриття
+                            scope.launch {
+                                navController.popBackStack()
+                            }
+                        }
+                
                         // Ліва іконка (кнопка назад)
                         Icon(
                             imageVector = Icons.Default.Menu,
@@ -230,16 +278,16 @@ fun AllExpensesScreen(
                             tint = DarkGray,
                             modifier = Modifier
                                 .size(24.dp)
-                                .clickable { navController.popBackStack() }
+                                .clickable { goBackWithSelectedAccount() }
                         )
-                        
+                
                         // Панель балансу (кнопка назад)
                         BalancePanel(
                             balance = balanceText,
-                            onClick = { navController.popBackStack() },
+                            onClick = { goBackWithSelectedAccount() },
                             modifier = Modifier.weight(1f)
                         )
-                        
+                
                         // Права іконка (кнопка назад)
                         Icon(
                             imageVector = Icons.Default.Menu,
@@ -247,10 +295,11 @@ fun AllExpensesScreen(
                             tint = DarkGray,
                             modifier = Modifier
                                 .size(24.dp)
-                                .clickable { navController.popBackStack() }
+                                .clickable { goBackWithSelectedAccount() }
                         )
                     }
                 }
+                
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -290,6 +339,8 @@ fun AllExpensesScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
 
         // Діалог додавання витрат/доходів
@@ -301,8 +352,17 @@ fun AllExpensesScreen(
                 },
                 onSubmit = { expense ->
                     scope.launch {
+                        // Використовуємо поточний вибраний рахунок
+                        val currentSelectedAccount = viewModel.selectedAccount.value
+                        
+                        if (currentSelectedAccount == AccountType.ALL) {
+                            Toast.makeText(context, "Оберіть конкретний рахунок для додавання операції", Toast.LENGTH_LONG).show()
+                            return@launch
+                        }
+                        
                         FirebaseFirestoreManager.addExpense(
                             expense,
+                            currentSelectedAccount,
                             onSuccess = {
                                 Toast.makeText(context, "Операцію додано", Toast.LENGTH_SHORT).show()
                                 showDialog = false

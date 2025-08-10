@@ -15,10 +15,7 @@ import com.avloga.budgetik.ui.screens.MainScreen
 import com.avloga.budgetik.ui.theme.BudgetikTheme
 import com.avloga.budgetik.ui.screens.LoginScreen
 import com.avloga.budgetik.ui.screens.AllExpensesScreen
-import com.avloga.budgetik.ui.animations.slideUpTransition
-import com.avloga.budgetik.ui.animations.slideDownTransition
-import com.avloga.budgetik.ui.animations.slideUpPopTransition
-import com.avloga.budgetik.ui.animations.slideDownPopTransition
+import com.avloga.budgetik.ui.animations.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import android.os.Build
@@ -28,6 +25,9 @@ import android.view.WindowInsetsController
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.avloga.budgetik.ui.animations.fastSlideUpTransition
+import com.avloga.budgetik.ui.components.ExpensesViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             BudgetikTheme {
                 val navController = rememberNavController()
+                val sharedViewModel: ExpensesViewModel = viewModel()
 
                 NavHost(
                     navController = navController, 
@@ -61,27 +62,30 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("userId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getString("userId") ?: "unknown"
-                        MainScreen(navController = navController, userId = userId)
+                        MainScreen(navController = navController, userId = userId, viewModel = sharedViewModel)
                     }
 
                     // Екран перегляду всіх витрат з анімацією
                     composable(
-                        route = "all_expenses",
-                        enterTransition = slideUpTransition(),
-                        exitTransition = slideDownTransition(),
-                        popEnterTransition = slideUpPopTransition(),
-                        popExitTransition = slideDownPopTransition()
-                    ) {
-                        val expenses =
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<List<Expense>>("expenses") ?: emptyList()
-                        val userId =
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<String>("userId") ?: "unknown"
+                        route = "all_expenses/{userId}/{selectedAccount}",
+                        arguments = listOf(
+                            navArgument("userId") { type = NavType.StringType },
+                            navArgument("selectedAccount") { type = NavType.StringType }
+                        ),
+                        enterTransition = fastSlideUpTransition(),
+                        exitTransition = fastSlideDownTransition(),
+                        popEnterTransition = fastSlideUpTransition(),
+                        popExitTransition = fastSlideDownTransition()
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId") ?: "unknown"
+                        val selectedAccount = backStackEntry.arguments?.getString("selectedAccount") ?: "CASH"
 
-                        AllExpensesScreen(navController = navController, userId = userId)
+                        AllExpensesScreen(
+                            navController = navController, 
+                            userId = userId,
+                            selectedAccountString = selectedAccount,
+                            viewModel = sharedViewModel
+                        )
                     }
 
                 }

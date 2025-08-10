@@ -13,12 +13,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.DarkGray
 import com.avloga.budgetik.ui.theme.BalanceGreen
+import com.avloga.budgetik.util.AccountType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopBar(
     modifier: Modifier = Modifier,
-    onMenuClick: () -> Unit = {}
+    onMenuClick: () -> Unit = {},
+    selectedAccount: AccountType = AccountType.CASH
 ) {
     Surface(
         modifier = modifier
@@ -58,7 +60,11 @@ fun CustomTopBar(
                         color = androidx.compose.ui.graphics.Color.White
                     )
                     Text(
-                        text = "Усі рахунки",
+                        text = when (selectedAccount) {
+                            AccountType.CASH -> "Готівка"
+                            AccountType.CARD -> "Платіжна картка"
+                            AccountType.ALL -> "Усі рахунки"
+                        },
                         fontSize = 12.sp,
                         color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
                     )

@@ -21,11 +21,27 @@ import com.avloga.budgetik.ui.theme.BalanceGreen
 import com.avloga.budgetik.ui.theme.LightMintGreen
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import com.avloga.budgetik.util.Period
+import com.avloga.budgetik.util.AccountType
+
+// Клас для представлення рахунку
+data class AccountItem(
+    val emoji: String,
+    val name: String,
+    val type: AccountType,
+    val balance: Double
+)
 
 @Composable
 fun SideMenu(
     isVisible: Boolean,
     onDismiss: () -> Unit,
+    selectedPeriod: Period = Period.DAY,
+    selectedAccount: AccountType = AccountType.CASH,
+    cashBalance: Double = 0.0,
+    cardBalance: Double = 0.0,
+    onPeriodSelected: (String) -> Unit = {},
+    onAccountSelected: (AccountType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val screenWidth = with(LocalDensity.current) { 360.dp.toPx() } // Приблизна ширина екрану
@@ -42,6 +58,9 @@ fun SideMenu(
         animationSpec = tween(durationMillis = 300),
         label = "fade"
     )
+    
+    // Стан для спадного списку рахунків
+    var isAccountDropdownExpanded by remember { mutableStateOf(false) }
     
     if (isVisible || slideAnimation > -menuWidth) {
         Box(
@@ -76,37 +95,111 @@ fun SideMenu(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     
-                    // Кнопка "Усі рахунки"
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BalanceGreen),
-                        color = Color.Transparent
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    // Спадний список для вибору рахунку
+                    Box {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isAccountDropdownExpanded = !isAccountDropdownExpanded },
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BalanceGreen),
+                            color = Color.Transparent
                         ) {
-                            Column {
-                                Text(
-                                    text = "Усі рахунки",
-                                    color = Color.Black,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "UAH",
-                                    color = Color.Black.copy(alpha = 0.7f),
-                                    fontSize = 12.sp
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = when (selectedAccount) {
+                                            AccountType.CASH -> "Готівка"
+                                            AccountType.CARD -> "Платіжна картка"
+                                            AccountType.ALL -> "Усі рахунки"
+                                        },
+                                        color = Color.Black,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "UAH",
+                                        color = Color.Black.copy(alpha = 0.7f),
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Icon(
+                                    imageVector = if (isAccountDropdownExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (isAccountDropdownExpanded) "Згорнути" else "Розгорнути",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Розгорнути",
-                                tint = Color.Black,
-                                modifier = Modifier.size(20.dp)
+                        }
+                        
+                        // Спадний список
+                        DropdownMenu(
+                            expanded = isAccountDropdownExpanded,
+                            onDismissRequest = { isAccountDropdownExpanded = false },
+                            modifier = Modifier
+                                .background(Color.White)
+                                .width(with(LocalDensity.current) { (menuWidth * 1.2f).toDp() }) // Трохи довше за меню
+                        ) {
+                            val accounts = listOf(
+                                AccountItem("💰", "Готівка", AccountType.CASH, cashBalance),
+                                AccountItem("💳", "Платіжна картка", AccountType.CARD, cardBalance),
+                                AccountItem("🏦", "Усі рахунки", AccountType.ALL, cashBalance + cardBalance)
                             )
+                            
+                            accounts.forEachIndexed { index, account ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(
+                                                    text = account.emoji,
+                                                    fontSize = 16.sp,
+                                                    modifier = Modifier.padding(end = 8.dp)
+                                                )
+                                                Text(
+                                                    text = account.name,
+                                                    color = if (selectedAccount == account.type) BalanceGreen else Color.Black,
+                                                    fontWeight = if (selectedAccount == account.type) FontWeight.Medium else FontWeight.Normal,
+                                                    fontSize = 14.sp
+                                                )
+                                            }
+                                            Text(
+                                                text = "${account.balance.toInt()} ₴",
+                                                color = if (selectedAccount == account.type) BalanceGreen else Color.Black.copy(alpha = 0.7f),
+                                                fontWeight = if (selectedAccount == account.type) FontWeight.Medium else FontWeight.Normal,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        onAccountSelected(account.type)
+                                        isAccountDropdownExpanded = false
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                                
+                                // Додаємо розділювач між елементами (крім останнього)
+                                if (index < accounts.size - 1) {
+                                    Divider(
+                                        color = Color.LightGray.copy(alpha = 0.5f),
+                                        thickness = 1.dp,
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                     
@@ -116,19 +209,29 @@ fun SideMenu(
                         "Тиждень",
                         "Місяць",
                         "Рік",
-                        "Усі",
-                        "Інтервал",
-                        "Вибір дати"
+                        "Усі"
                     )
                     
                     periods.forEach { period ->
+                        val isSelected = when (period) {
+                            "День" -> selectedPeriod == Period.DAY
+                            "Тиждень" -> selectedPeriod == Period.WEEK
+                            "Місяць" -> selectedPeriod == Period.MONTH
+                            "Рік" -> selectedPeriod == Period.YEAR
+                            "Усі" -> selectedPeriod == Period.ALL
+                            else -> false
+                        }
+                        
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { /* TODO: Обробка вибору періоду */ },
+                                .clickable { 
+                                    onPeriodSelected(period)
+                                    onDismiss()
+                                },
                             shape = RoundedCornerShape(8.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, BalanceGreen),
-                            color = Color.Transparent
+                            color = if (isSelected) BalanceGreen.copy(alpha = 0.1f) else Color.Transparent
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -136,9 +239,20 @@ fun SideMenu(
                             ) {
                                 Text(
                                     text = period,
-                                    color = Color.Black,
-                                    fontSize = 16.sp
+                                    color = if (isSelected) BalanceGreen else Color.Black,
+                                    fontSize = 16.sp,
+                                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
                                 )
+                                
+                                if (isSelected) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Вибрано",
+                                        tint = BalanceGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
