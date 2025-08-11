@@ -3,6 +3,7 @@ package com.avloga.budgetik.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,6 +33,11 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import com.avloga.budgetik.data.firebase.FirebaseFirestoreManager
 import com.avloga.budgetik.util.AccountType
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncatedWithSign
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 // Функція для безпечного парсингу часу (підтримує як HH:mm, так і HH:mm:ss)
 fun parseTimeSafely(timeStr: String): LocalTime {
@@ -170,6 +176,9 @@ fun AllExpensesScreen(
         viewModel.refreshBalances()
     }
     var showDialog by remember { mutableStateOf(false) }
+    var lastPressedType by remember { mutableStateOf<String?>(null) } // "outcome" або "income"
+    var deleteKey by remember { mutableStateOf<String?>(null) }
+    var deleteDialogExpense by remember { mutableStateOf<Expense?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -218,7 +227,7 @@ fun AllExpensesScreen(
     val totalBalance = remember(sortedExpenses) {
         sortedExpenses.sumOf { if (it.type == "income") it.amount else -it.amount }
     }
-    val balanceText = remember(totalBalance) { "${totalBalance.toInt()} грн" }
+    val balanceText = remember(totalBalance) { "${formatMoneyTruncatedWithSign(totalBalance)} грн" }
 
     val groupedExpenses = remember(sortedExpenses) {
         createGroupedExpenses(sortedExpenses)
@@ -248,12 +257,20 @@ fun AllExpensesScreen(
             )
 
             // Основний контент з LazyColumn
+            val listState = rememberLazyListState()
+            LaunchedEffect(listState.isScrollInProgress) {
+                if (listState.isScrollInProgress) {
+                    // При початку скролу ховаємо значок видалення
+                    deleteKey = null
+                }
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                state = listState
             ) {
                 item {
                     // Панель балансу з іконками
@@ -326,15 +343,27 @@ fun AllExpensesScreen(
 
                     val expenses = groupedExpenses[date] ?: emptyList()
                     items(expenses) { expense ->
-                        DateTransactionItem(expense = expense)
+                        val key = if (expense.operationId.isNotBlank()) expense.operationId else "${'$'}{expense.userName}|${'$'}{expense.amount}|${'$'}{expense.date}|${'$'}{expense.time}|${'$'}{expense.comment}|${'$'}{expense.type}|${'$'}{expense.category}"
+                        DateTransactionItem(
+                            expense = expense,
+                            showDelete = deleteKey == key,
+                            onLongPress = { deleteKey = key },
+                            onDeleteClick = { deleteDialogExpense = expense }
+                        )
                     }
                 }
             }
 
             // Кнопки дій (завжди внизу екрану)
             ActionButtons(
-                onExpenseClick = { showDialog = true },
-                onIncomeClick = { showDialog = true },
+                onExpenseClick = {
+                    lastPressedType = "outcome"
+                    showDialog = true
+                },
+                onIncomeClick = {
+                    lastPressedType = "income"
+                    showDialog = true
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -371,6 +400,66 @@ fun AllExpensesScreen(
                                 Toast.makeText(context, "Помилка збереження", Toast.LENGTH_SHORT).show()
                                 // Не закриваємо діалог при помилці, щоб користувач міг спробувати ще раз
                             }
+                        )
+                    }
+                },
+                presetType = lastPressedType
+            )
+        }
+
+        // Діалог підтвердження видалення з перевіркою суми
+        if (deleteDialogExpense != null) {
+            val expenseToDelete = deleteDialogExpense!!
+            var confirmAmountText by remember { mutableStateOf("") }
+            val expectedText = remember(expenseToDelete.amount) {
+                val raw = String.format(Locale.US, "%.2f", expenseToDelete.amount)
+                raw.trimEnd('0').trimEnd('.')
+            }
+            val parsedInput = remember(confirmAmountText) {
+                confirmAmountText.replace(',', '.').trim().toDoubleOrNull()
+            }
+            val isDeleteEnabled = parsedInput?.let { kotlin.math.abs(it - expenseToDelete.amount) < 0.00001 } == true
+
+            AlertDialog(
+                onDismissRequest = { deleteDialogExpense = null },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val currentSelectedAccount = viewModel.selectedAccount.value
+                            scope.launch {
+                                FirebaseFirestoreManager.deleteExpense(
+                                    expense = expenseToDelete,
+                                    accountType = currentSelectedAccount,
+                                    onSuccess = {
+                                        deleteDialogExpense = null
+                                        deleteKey = null
+                                        Toast.makeText(context, "Операцію видалено", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onFailure = {
+                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            }
+                        },
+                        enabled = isDeleteEnabled,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                    ) { Text("Видалити") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteDialogExpense = null }) { Text("Скасувати") }
+                },
+                title = { Text("Підтвердження видалення") },
+                text = {
+                    Column {
+                        Text("Для підтвердження введіть точну суму операції")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = confirmAmountText,
+                            onValueChange = { confirmAmountText = it },
+                            label = { Text("Сума") },
+                            placeholder = { Text(expectedText) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
                     }
                 }

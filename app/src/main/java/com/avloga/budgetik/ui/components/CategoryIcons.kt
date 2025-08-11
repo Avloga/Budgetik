@@ -14,89 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.*
 
-@Composable
-fun CategoryIconsGrid(
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Лівий стовпець категорій
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CategoryText(
-                text = "🛒",
-                color = CategoryPink,
-                contentDescription = "Покупки"
-            )
-            CategoryText(
-                text = "🏠",
-                color = CategoryBlue,
-                contentDescription = "Будинок"
-            )
-            CategoryText(
-                text = "🍽️",
-                color = LightGray,
-                contentDescription = "Їжа"
-            )
-            CategoryText(
-                text = "🧴",
-                color = CategoryBlue,
-                contentDescription = "Особиста гігієна"
-            )
-            CategoryText(
-                text = "⚽",
-                color = CategoryTeal,
-                contentDescription = "Спорт"
-            )
-            CategoryText(
-                text = "🚗",
-                color = CategoryBlue,
-                contentDescription = "Машина"
-            )
-        }
-        
-        // Правий стовпець категорій
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CategoryText(
-                text = "🏥",
-                color = CategoryRed,
-                contentDescription = "Здоров'я"
-            )
-            CategoryText(
-                text = "📞",
-                color = LightGray,
-                contentDescription = "Телефон"
-            )
-            CategoryText(
-                text = "🐱",
-                color = CategoryTeal,
-                contentDescription = "Тварини"
-            )
-            CategoryText(
-                text = "🎁",
-                color = CategoryPurple,
-                contentDescription = "Подарунки"
-            )
-            CategoryText(
-                text = "👕",
-                color = CategoryPurple,
-                contentDescription = "Одяг"
-            )
-            CategoryText(
-                text = "🍺",
-                color = CategoryOrange,
-                contentDescription = "Розваги"
-            )
-        }
-    }
-}
+// CategoryIconsGrid was a legacy static preview and is not used anymore; removed to avoid duplicated/obsolete categories.
 
 @Composable
 fun CategoryText(
@@ -145,8 +63,10 @@ fun CategoryIcon(
     contentDescription: String,
     modifier: Modifier = Modifier
 ) {
+    // Показати емодзі з центрального реєстру, якщо доступне
+    val emoji = Categories.findByName(contentDescription)?.emoji ?: "📊"
     CategoryText(
-        text = "📊",
+        text = emoji,
         color = color,
         contentDescription = contentDescription,
         modifier = modifier

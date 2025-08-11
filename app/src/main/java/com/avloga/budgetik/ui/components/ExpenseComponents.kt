@@ -35,12 +35,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import androidx.compose.ui.unit.sp
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
 
 @Composable
 fun ExpenseRow(expense: Expense) {
     val amountColor = if (expense.type == "income") com.avloga.budgetik.ui.theme.IncomeGreen else com.avloga.budgetik.ui.theme.ExpenseRed
     var showDialog by remember { mutableStateOf(false) }
-    val amountText = (if (expense.type == "outcome") "-" else "+") + expense.amount.toInt().toString()
+    val amountText = (if (expense.type == "outcome") "-" else "+") + formatMoneyTruncated(expense.amount)
 
     val avatarRes = when (expense.userName) {
         "Паша" -> R.drawable.pasha_avatar

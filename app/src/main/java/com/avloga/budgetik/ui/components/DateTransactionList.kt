@@ -27,6 +27,17 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 
 @Composable
 fun DateTransactionList(
@@ -145,7 +156,12 @@ fun formatTimeForDisplay(timeStr: String): String {
 }
 
 @Composable
-fun DateTransactionItem(expense: Expense) {
+fun DateTransactionItem(
+    expense: Expense,
+    showDelete: Boolean = false,
+    onLongPress: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null
+) {
     val avatarColor = remember(expense.userName) {
         when (expense.userName.lowercase()) {
             "паша" -> Color(0xFF4CAF50) // Зелений для Паші
@@ -161,23 +177,72 @@ fun DateTransactionItem(expense: Expense) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 16.dp),
+            .padding(vertical = 4.dp, horizontal = 16.dp)
+            .pointerInput(onLongPress) {
+                if (onLongPress != null) {
+                    detectTapGestures(
+                        onPress = {
+                            // Кастомний лонгпрес >= 1 сек
+                            val releasedWithinTimeout = withTimeoutOrNull(300) {
+                                tryAwaitRelease()
+                                true
+                            } ?: false
+                            if (!releasedWithinTimeout) {
+                                onLongPress()
+                                // Дочекаємося відпускання, щоб не обробляти повторно
+                                tryAwaitRelease()
+                            }
+                        }
+                    )
+                }
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Аватарка (колірний круг замість зображення)
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(avatarColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = expense.userName.firstOrNull()?.uppercase() ?: "?",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+        // Зона аватарки/іконки видалення (40dp)
+        Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            // Аватарка
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !showDelete,
+                enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(250)),
+                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(avatarColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = expense.userName.firstOrNull()?.uppercase() ?: "?",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
+            // Іконка видалення (тимчасово ❌)
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showDelete,
+                enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(250)),
+                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFEBEE))
+                        .pointerInput(onDeleteClick) {
+                            if (onDeleteClick != null) {
+                                detectTapGestures(onTap = { onDeleteClick() })
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "❌", fontSize = 18.sp)
+                }
+            }
         }
         Spacer(modifier = Modifier.width(12.dp))
         // Ім'я та категорія
@@ -188,8 +253,10 @@ fun DateTransactionItem(expense: Expense) {
                 fontSize = 14.sp,
                 color = Color(0xFF333333)
             )
+            val categoryName = expense.category ?: "Інше"
+            val category = Categories.findByName(categoryName)
             Text(
-                text = expense.category ?: "Інше",
+                text = category?.name ?: categoryName,
                 fontSize = 12.sp,
                 color = LightGray
             )
@@ -208,7 +275,7 @@ fun DateTransactionItem(expense: Expense) {
         // Сума та час
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = (if (expense.type == "income") "+" else "-") + "${expense.amount.toInt()} грн",
+                text = (if (expense.type == "income") "+" else "-") + "${formatMoneyTruncated(expense.amount)} грн",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = amountColor

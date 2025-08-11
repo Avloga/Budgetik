@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.avloga.budgetik.ui.theme.BalanceGreen
 import com.avloga.budgetik.util.AccountType
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
 
 @Composable
 fun AccountSelectionDialog(
@@ -145,7 +146,7 @@ private fun AccountOption(
                     color = Color.Black
                 )
                 Text(
-                    text = "${balance.toInt()} грн",
+                    text = "${formatMoneyTruncated(balance)} грн",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

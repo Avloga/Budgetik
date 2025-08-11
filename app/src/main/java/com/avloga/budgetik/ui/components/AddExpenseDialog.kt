@@ -23,27 +23,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseDialog(
     userId: String,
     onDismiss: () -> Unit,
-    onSubmit: (Expense) -> Unit
+    onSubmit: (Expense) -> Unit,
+    presetType: String? = null // "outcome" або "income"; якщо задано — тип зафіксовано
 ) {
     val context = LocalContext.current
     var amountText by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("outcome") } // витрата за замовчуванням
+    var selectedType by remember(presetType) { mutableStateOf(presetType ?: "outcome") } // витрата за замовчуванням або передвибраний
     val types = listOf("Витрата", "Поповнення")
     var expandedType by remember { mutableStateOf(false) }
 
-    val expenseCategories = listOf(
-        "Зв'язок", "Їжа", "Кафе", "Транспорт", "Таксі", "Гігієна", 
-        "Улюбленці", "Одяг", "Подарунки", "Спорт", "Здоров'я", 
-        "Ігри", "Розваги", "Житло"
-    )
-    val incomeCategories = listOf("Зарплата", "Подарунок", "Заощадження")
-    var selectedCategory by remember { mutableStateOf(expenseCategories.first()) }
+    val expenseCategories = remember { Categories.expenseNames() }
+    val incomeCategories = remember { Categories.incomeNames() }
+    var selectedCategory by remember(selectedType) {
+        mutableStateOf(if (selectedType == "outcome") expenseCategories.first() else incomeCategories.first())
+    }
     var expandedCategory by remember { mutableStateOf(false) }
 
     var commentText by remember { mutableStateOf("") }
@@ -59,9 +59,10 @@ fun AddExpenseDialog(
                     val amount = amountText.toDoubleOrNull() ?: 0.0
 
                     val expense = Expense(
+                        operationId = UUID.randomUUID().toString(),
                         userName = userId,
                         amount = amount,
-                        category = if (selectedType == "outcome") selectedCategory else null,
+                        category = selectedCategory,
                         date = dateFormat.format(now),
                         time = timeFormat.format(now),
                         comment = commentText,
@@ -90,35 +91,46 @@ fun AddExpenseDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Тип операції Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = expandedType,
-                    onExpandedChange = { expandedType = !expandedType }
-                ) {
+                // Тип операції: якщо задано presetType — просто показуємо зафіксоване значення; інакше даємо вибір
+                if (presetType != null) {
                     OutlinedTextField(
                         value = if (selectedType == "outcome") "Витрата" else "Поповнення",
                         onValueChange = {},
                         readOnly = true,
+                        enabled = false,
                         label = { Text("Тип операції") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType)
-                        },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
+                } else {
+                    ExposedDropdownMenuBox(
                         expanded = expandedType,
-                        onDismissRequest = { expandedType = false }
+                        onExpandedChange = { expandedType = !expandedType }
                     ) {
-                        types.forEachIndexed { index, typeName ->
-                            DropdownMenuItem(
-                                text = { Text(typeName) },
-                                onClick = {
-                                    selectedType = if (index == 0) "outcome" else "income"
-                                    // Автоматично змінюємо категорію при зміні типу
-                                    selectedCategory = if (selectedType == "outcome") expenseCategories.first() else incomeCategories.first()
-                                    expandedType = false
-                                }
-                            )
+                        OutlinedTextField(
+                            value = if (selectedType == "outcome") "Витрата" else "Поповнення",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Тип операції") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType)
+                            },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedType,
+                            onDismissRequest = { expandedType = false }
+                        ) {
+                            types.forEachIndexed { index, typeName ->
+                                DropdownMenuItem(
+                                    text = { Text(typeName) },
+                                    onClick = {
+                                        selectedType = if (index == 0) "outcome" else "income"
+                                        // Автоматично змінюємо категорію при зміні типу
+                                        selectedCategory = if (selectedType == "outcome") expenseCategories.first() else incomeCategories.first()
+                                        expandedType = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -126,17 +138,16 @@ fun AddExpenseDialog(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Категорія Dropdown (недоступна, якщо selectedType == income)
+                // Категорія Dropdown (доступна для обох типів)
                 ExposedDropdownMenuBox(
                     expanded = expandedCategory,
-                    onExpandedChange = { if (selectedType == "outcome") expandedCategory = !expandedCategory }
+                    onExpandedChange = { expandedCategory = !expandedCategory }
                 ) {
                     OutlinedTextField(
                         value = selectedCategory,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Категорія") },
-                        enabled = selectedType == "outcome",
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
                         },

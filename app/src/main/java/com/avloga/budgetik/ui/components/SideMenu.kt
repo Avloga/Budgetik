@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.avloga.budgetik.util.Period
 import com.avloga.budgetik.util.AccountType
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
 
 // Клас для представлення рахунку
 data class AccountItem(
@@ -175,7 +176,7 @@ fun SideMenu(
                                                 )
                                             }
                                             Text(
-                                                text = "${account.balance.toInt()} ₴",
+                                                text = "${formatMoneyTruncated(account.balance)} ₴",
                                                 color = if (selectedAccount == account.type) BalanceGreen else Color.Black.copy(alpha = 0.7f),
                                                 fontWeight = if (selectedAccount == account.type) FontWeight.Medium else FontWeight.Normal,
                                                 fontSize = 12.sp

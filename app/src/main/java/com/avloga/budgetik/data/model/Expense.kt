@@ -2,6 +2,7 @@ package com.avloga.budgetik.data.model
 
 import java.io.Serializable
 data class Expense(
+    val operationId: String = "", // унікальний ідентифікатор операції
     val userName: String = "",
     val amount: Double = 0.0,
     val category: String? = "",

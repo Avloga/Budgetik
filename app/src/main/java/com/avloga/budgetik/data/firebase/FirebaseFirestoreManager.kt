@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 object FirebaseFirestoreManager {
 
@@ -16,6 +17,13 @@ object FirebaseFirestoreManager {
     // Колекції для різних типів рахунків
     private val cashExpensesCollection = db.collection("cash_expenses")
     private val cardExpensesCollection = db.collection("card_expenses")
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toExpenseWithId(): Expense? {
+        val expense = this.toObject(Expense::class.java) ?: return null
+        return if (expense.operationId.isBlank()) {
+            expense.copy(operationId = this.id)
+        } else expense
+    }
 
     /**
      * Отримує колекцію залежно від типу рахунку
@@ -46,12 +54,62 @@ object FirebaseFirestoreManager {
                 return
             }
             
+            val id = if (expense.operationId.isNotBlank()) expense.operationId else UUID.randomUUID().toString()
             getCollectionForAccountType(accountType)
-                .add(expense)
+                .document(id)
+                .set(expense.copy(operationId = id))
                 .await()
             onSuccess()
         } catch (e: Exception) {
             onFailure(e.message ?: "Невідома помилка при додаванні витрати")
+        }
+    }
+
+    /**
+     * Видаляє одну операцію, намагаючись знайти її за полями (без operationId).
+     * Якщо знайдено кілька — видаляє першу.
+     */
+    suspend fun deleteExpense(
+        expense: Expense,
+        accountType: AccountType,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        try {
+            if (accountType == AccountType.ALL) {
+                onFailure("Неможливо видалити з 'Усі рахунки'. Оберіть конкретний рахунок.")
+                return
+            }
+
+            val collection = getCollectionForAccountType(accountType)
+            if (expense.operationId.isNotBlank()) {
+                collection.document(expense.operationId).delete().await()
+            } else {
+                var query = collection
+                    .whereEqualTo("userName", expense.userName)
+                    .whereEqualTo("amount", expense.amount)
+                    .whereEqualTo("date", expense.date)
+                    .whereEqualTo("time", expense.time)
+                    .whereEqualTo("comment", expense.comment)
+                    .whereEqualTo("type", expense.type)
+
+                // Категорія могла бути null у старих записах; якщо є — додаємо фільтр
+                if (expense.category != null) {
+                    query = query.whereEqualTo("category", expense.category)
+                }
+
+                val snapshot = query.get().await()
+                val doc = snapshot.documents.firstOrNull()
+                if (doc == null) {
+                    onFailure("Не вдалося знайти операцію для видалення")
+                    return
+                }
+
+                doc.reference.delete().await()
+            }
+            onSuccess()
+        } catch (e: Exception) {
+            onFailure(e.message ?: "Помилка видалення")
         }
     }
 
@@ -68,7 +126,7 @@ object FirebaseFirestoreManager {
                     }
 
                     val expenses = snapshot?.documents?.mapNotNull { doc ->
-                        doc.toObject(Expense::class.java)
+                        doc.toExpenseWithId()
                     } ?: emptyList()
 
                     trySend(expenses)
@@ -85,7 +143,7 @@ object FirebaseFirestoreManager {
                     }
 
                     val expenses = snapshot?.documents?.mapNotNull { doc ->
-                        doc.toObject(Expense::class.java)
+                        doc.toExpenseWithId()
                     } ?: emptyList()
 
                     trySend(expenses)
@@ -116,11 +174,11 @@ object FirebaseFirestoreManager {
                 }
 
                 val cashExpenses = cashSnapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Expense::class.java)
+                    doc.toExpenseWithId()
                 } ?: emptyList()
 
                 val cardExpenses = cardSnapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Expense::class.java)
+                    doc.toExpenseWithId()
                 } ?: emptyList()
 
                 val allExpenses = cashExpenses + cardExpenses
@@ -140,9 +198,7 @@ object FirebaseFirestoreManager {
     suspend fun getBalanceForAccount(accountType: AccountType): Double {
         return try {
             val snapshot = getCollectionForAccountType(accountType).get().await()
-            val expenses = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(Expense::class.java)
-            }
+            val expenses = snapshot.documents.mapNotNull { doc -> doc.toExpenseWithId() }
             
             expenses.sumOf { expense ->
                 if (expense.type == "income") expense.amount else -expense.amount

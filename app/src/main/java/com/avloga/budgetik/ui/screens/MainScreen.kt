@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.BalanceGreen
 import java.util.Locale
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncated
+import com.avloga.budgetik.util.MoneyUtils.formatMoneyTruncatedWithSign
 import com.avloga.budgetik.ui.components.CategoryPercentage
 import com.avloga.budgetik.ui.components.SideMenu
 import com.avloga.budgetik.util.AccountType
@@ -60,6 +62,7 @@ fun MainScreen(
     val cardBalance by viewModel.cardBalance.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
+    var lastPressedType by remember { mutableStateOf<String?>(null) } // "outcome" або "income"
     var showSideMenu by remember { mutableStateOf(false) }
 
     // Оптимізуємо обчислення, використовуючи remember
@@ -116,7 +119,7 @@ fun MainScreen(
     val totalBalance = remember(allExpensesForDisplay) {
         allExpensesForDisplay.sumOf { if (it.type == "income") it.amount else -it.amount }
     }
-    val balanceText = remember(totalBalance) { "${totalBalance.toInt()} ₴" }
+    val balanceText = remember(totalBalance) { "${formatMoneyTruncatedWithSign(totalBalance)} ₴" }
 
     // Розрахунок доходів та витрат для кругового графіка
     val totalIncome = remember(allExpensesForDisplay) {
@@ -125,8 +128,8 @@ fun MainScreen(
     val totalExpense = remember(allExpensesForDisplay) {
         allExpensesForDisplay.filter { it.type == "outcome" }.sumOf { it.amount }
     }
-    val incomeText = remember(totalIncome) { "${totalIncome.toInt()} грн" }
-    val expenseText = remember(totalExpense) { "${totalExpense.toInt()} грн" }
+    val incomeText = remember(totalIncome) { "${formatMoneyTruncated(totalIncome)} грн" }
+    val expenseText = remember(totalExpense) { "${formatMoneyTruncated(totalExpense)} грн" }
 
     // Розрахунок відсотків для кожної категорії
     val categoryPercentages = remember(allExpensesForDisplay) {
@@ -158,24 +161,7 @@ fun MainScreen(
     // Щоб перемістити категорію, просто змініть її позицію в списку
     // Наприклад, щоб перемістити "Зв'язок" з першої позиції в останню:
     // - Перемістіть CategoryItem("📞", ...) в кінець списку
-    val categories = remember {
-        listOf(
-            CategoryItem("📞", com.avloga.budgetik.ui.theme.CategoryPink, "Зв'язок"),           // позиція 0
-            CategoryItem("🍽️", com.avloga.budgetik.ui.theme.CategoryGreen, "Їжа"),             // позиція 1
-            CategoryItem("☕", com.avloga.budgetik.ui.theme.CategoryOrange, "Кафе"),                // позиція 2
-            CategoryItem("🚌", com.avloga.budgetik.ui.theme.CategoryBlue, "Транспорт"),        // позиція 3
-            CategoryItem("🚕", com.avloga.budgetik.ui.theme.CategoryYellow, "Таксі"),            // позиція 4
-            CategoryItem("🧴", com.avloga.budgetik.ui.theme.CategoryCyan, "Гігієна"),          // позиція 5
-            CategoryItem("🐱", com.avloga.budgetik.ui.theme.CategoryTeal, "Улюбленці"),        // позиція 6
-            CategoryItem("👕", com.avloga.budgetik.ui.theme.CategoryPurple, "Одяг"),           // позиція 7
-            CategoryItem("🎁", com.avloga.budgetik.ui.theme.CategoryRed, "Подарунки"),      // позиція 8
-            CategoryItem("⚽", com.avloga.budgetik.ui.theme.CategoryLime, "Спорт"),            // позиція 9
-            CategoryItem("🏥", com.avloga.budgetik.ui.theme.CategoryDeepOrange, "Здоров'я"),          // позиція 10
-            CategoryItem("🎮", com.avloga.budgetik.ui.theme.CategoryIndigo, "Ігри"),           // позиція 11
-            CategoryItem("🍺", com.avloga.budgetik.ui.theme.CategoryAmber, "Розваги"),        // позиція 12
-            CategoryItem("🏠", com.avloga.budgetik.ui.theme.CategoryBrown, "Житло")             // позиція 13
-        )
-    }
+    val categories = remember { Categories.toCategoryItems() }
 
     // Створення списку категорій з відсотками для кругової діаграми
     val categoryPercentagesForChart = remember(categoryPercentages, categories) {
@@ -303,8 +289,14 @@ fun MainScreen(
 
                 // Кнопки дій
                 ActionButtons(
-                    onExpenseClick = { showDialog = true },
-                    onIncomeClick = { showDialog = true },
+                    onExpenseClick = {
+                        lastPressedType = "outcome"
+                        showDialog = true
+                    },
+                    onIncomeClick = {
+                        lastPressedType = "income"
+                        showDialog = true
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -336,7 +328,9 @@ fun MainScreen(
                             }
                         )
                     }
-                }
+                },
+                // Передаємо зафіксований тип у залежності від останньої натиснутої кнопки
+                presetType = lastPressedType
             )
         }
 
