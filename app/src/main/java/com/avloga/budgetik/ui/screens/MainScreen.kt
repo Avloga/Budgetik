@@ -64,6 +64,7 @@ fun MainScreen(
     var showDialog by remember { mutableStateOf(false) }
     var lastPressedType by remember { mutableStateOf<String?>(null) } // "outcome" або "income"
     var showSideMenu by remember { mutableStateOf(false) }
+    var showRightSideMenu by remember { mutableStateOf(false) }
 
     // Оптимізуємо обчислення, використовуючи remember
     val name = remember(userId) {
@@ -196,10 +197,23 @@ fun MainScreen(
             CustomTopBar(
                 modifier = Modifier.fillMaxWidth(),
                 onMenuClick = {
-                    showSideMenu = !showSideMenu
+                    if (showSideMenu) {
+                        showSideMenu = false
+                    } else {
+                        if (showRightSideMenu) showRightSideMenu = false
+                        showSideMenu = true
+                    }
                 },
                 selectedAccount = selectedAccount,
-                userId = userId
+                userId = userId,
+                onAvatarClick = {
+                    if (showRightSideMenu) {
+                        showRightSideMenu = false
+                    } else {
+                        if (showSideMenu) showSideMenu = false
+                        showRightSideMenu = true
+                    }
+                }
             )
 
             // Основний контент
@@ -350,6 +364,23 @@ fun MainScreen(
                 // Безпосередньо встановлюємо вибраний рахунок
                 viewModel.setSelectedAccount(accountType)
                 showSideMenu = false
+            }
+        )
+
+        // Праве меню: окремий компонент, що відкривається справа
+        RightSideMenu(
+            isVisible = showRightSideMenu,
+            onDismiss = { showRightSideMenu = false },
+            selectedPeriod = selectedPeriod,
+            selectedAccount = selectedAccount,
+            cashBalance = cashBalance,
+            cardBalance = cardBalance,
+            onPeriodSelected = { periodName ->
+                viewModel.setSelectedPeriodFromString(periodName)
+            },
+            onAccountSelected = { accountType ->
+                viewModel.setSelectedAccount(accountType)
+                showRightSideMenu = false
             }
         )
 
