@@ -15,7 +15,8 @@ import androidx.compose.ui.unit.IntSize
 data class CategoryItem(
     val text: String,
     val color: Color,
-    val contentDescription: String
+    val contentDescription: String,
+    val drawableName: String? = null
 )
 
 // Допоміжна функція для форматування відсотків
@@ -61,25 +62,33 @@ fun CategoryGrid(
                 text = categories[0].text, 
                 color = categories[0].color, 
                 contentDescription = categories[0].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[0].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[0].contentDescription),
+                drawableName = categories[0].drawableName,
+                percentageColor = categories[0].color
             )
             if (categories.size > 1) CategoryText(
                 text = categories[1].text, 
                 color = categories[1].color, 
                 contentDescription = categories[1].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[1].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[1].contentDescription),
+                drawableName = categories[1].drawableName,
+                percentageColor = categories[1].color
             )
             if (categories.size > 2) CategoryText(
                 text = categories[2].text, 
                 color = categories[2].color, 
                 contentDescription = categories[2].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[2].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[2].contentDescription),
+                drawableName = categories[2].drawableName,
+                percentageColor = categories[2].color
             )
             if (categories.size > 3) CategoryText(
                 text = categories[3].text, 
                 color = categories[3].color, 
                 contentDescription = categories[3].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[3].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[3].contentDescription),
+                drawableName = categories[3].drawableName,
+                percentageColor = categories[3].color
             )
         }
         
@@ -94,19 +103,25 @@ fun CategoryGrid(
                 text = categories[4].text, 
                 color = categories[4].color, 
                 contentDescription = categories[4].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[4].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[4].contentDescription),
+                drawableName = categories[4].drawableName,
+                percentageColor = categories[4].color
             )
             if (categories.size > 5) CategoryText(
                 text = categories[5].text, 
                 color = categories[5].color, 
                 contentDescription = categories[5].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[5].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[5].contentDescription),
+                drawableName = categories[5].drawableName,
+                percentageColor = categories[5].color
             )
             if (categories.size > 6) CategoryText(
                 text = categories[6].text, 
                 color = categories[6].color, 
                 contentDescription = categories[6].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[6].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[6].contentDescription),
+                drawableName = categories[6].drawableName,
+                percentageColor = categories[6].color
             )
         }
         
@@ -121,19 +136,25 @@ fun CategoryGrid(
                 text = categories[7].text, 
                 color = categories[7].color, 
                 contentDescription = categories[7].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[7].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[7].contentDescription),
+                drawableName = categories[7].drawableName,
+                percentageColor = categories[7].color
             )
             if (categories.size > 8) CategoryText(
                 text = categories[8].text, 
                 color = categories[8].color, 
                 contentDescription = categories[8].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[8].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[8].contentDescription),
+                drawableName = categories[8].drawableName,
+                percentageColor = categories[8].color
             )
             if (categories.size > 9) CategoryText(
                 text = categories[9].text, 
                 color = categories[9].color, 
                 contentDescription = categories[9].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[9].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[9].contentDescription),
+                drawableName = categories[9].drawableName,
+                percentageColor = categories[9].color
             )
         }
         
@@ -148,25 +169,33 @@ fun CategoryGrid(
                 text = categories[10].text, 
                 color = categories[10].color, 
                 contentDescription = categories[10].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[10].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[10].contentDescription),
+                drawableName = categories[10].drawableName,
+                percentageColor = categories[10].color
             )
             if (categories.size > 11) CategoryText(
                 text = categories[11].text, 
                 color = categories[11].color, 
                 contentDescription = categories[11].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[11].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[11].contentDescription),
+                drawableName = categories[11].drawableName,
+                percentageColor = categories[11].color
             )
             if (categories.size > 12) CategoryText(
                 text = categories[12].text, 
                 color = categories[12].color, 
                 contentDescription = categories[12].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[12].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[12].contentDescription),
+                drawableName = categories[12].drawableName,
+                percentageColor = categories[12].color
             )
             if (categories.size > 13) CategoryText(
                 text = categories[13].text, 
                 color = categories[13].color, 
                 contentDescription = categories[13].contentDescription,
-                percentage = formatPercentage(categoryPercentages, categories[13].contentDescription)
+                percentage = formatPercentage(categoryPercentages, categories[13].contentDescription),
+                drawableName = categories[13].drawableName,
+                percentageColor = categories[13].color
             )
         }
     }

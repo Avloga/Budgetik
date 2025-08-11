@@ -13,6 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.*
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.remember
+import androidx.compose.ui.res.painterResource
 
 // CategoryIconsGrid was a legacy static preview and is not used anymore; removed to avoid duplicated/obsolete categories.
 
@@ -22,8 +25,19 @@ fun CategoryText(
     color: Color,
     contentDescription: String,
     percentage: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    drawableName: String? = null,
+    percentageColor: Color? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val resId = remember(drawableName) {
+        if (drawableName != null) {
+            val id = context.resources.getIdentifier(drawableName, "drawable", context.packageName)
+            if (id != 0) id else null
+        } else null
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -35,25 +49,29 @@ fun CategoryText(
                 .background(color.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = text,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Normal
-            )
+            if (resId != null) {
+                Image(
+                    painter = painterResource(id = resId as Int),
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(28.dp)
+                )
+            } else {
+                Text(text = text, fontSize = 24.sp, fontWeight = FontWeight.Normal)
+            }
         }
-        
-        // Відображення відсотків під категорією (тільки якщо відсоток не null)
+
         if (percentage != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = percentage,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Normal,
-                color = com.avloga.budgetik.ui.theme.DarkGray
+                color = percentageColor ?: color
             )
         }
     }
 }
+
 
 // Залишаю стару функцію для сумісності
 @Composable
@@ -69,6 +87,7 @@ fun CategoryIcon(
         text = emoji,
         color = color,
         contentDescription = contentDescription,
+        percentageColor = color,
         modifier = modifier
     )
 } 
