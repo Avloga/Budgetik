@@ -14,14 +14,28 @@ import androidx.compose.ui.unit.sp
 import com.avloga.budgetik.ui.theme.DarkGray
 import com.avloga.budgetik.ui.theme.BalanceGreen
 import com.avloga.budgetik.util.AccountType
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.avloga.budgetik.R
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomTopBar(
     modifier: Modifier = Modifier,
     onMenuClick: () -> Unit = {},
-    selectedAccount: AccountType = AccountType.CASH
+    selectedAccount: AccountType = AccountType.CASH,
+    userId: String = ""
 ) {
+    val avatarRes: Int? = when (userId.lowercase()) {
+        "pasha", "паша" -> R.drawable.pasha_avatar
+        "tanya", "таня" -> R.drawable.tanya_avatar
+        else -> null
+    }
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -49,9 +63,7 @@ fun CustomTopBar(
                         tint = androidx.compose.ui.graphics.Color.White
                     )
                 }
-                
                 Spacer(modifier = Modifier.width(12.dp))
-                
                 Column {
                     Text(
                         text = "Budgetik",
@@ -70,31 +82,24 @@ fun CustomTopBar(
                     )
                 }
             }
-            
-            // Права частина - іконки
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(
-                    onClick = { /* TODO: Пошук */ }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Пошук",
-                        tint = androidx.compose.ui.graphics.Color.White
-                    )
-                }
-                
-                IconButton(
-                    onClick = { /* TODO: Синхронізація */ }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Синхронізація",
-                        tint = androidx.compose.ui.graphics.Color.White
-                    )
-                }
+            // Права частина - аватарка або заглушка
+            if (avatarRes != null) {
+                Image(
+                    painter = painterResource(id = avatarRes),
+                    contentDescription = "User Avatar",
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f))
+                )
             }
         }
     }
-} 
+}

@@ -32,12 +32,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.avloga.budgetik.R
 
 @Composable
 fun DateTransactionList(
@@ -162,11 +166,11 @@ fun DateTransactionItem(
     onLongPress: (() -> Unit)? = null,
     onDeleteClick: (() -> Unit)? = null
 ) {
-    val avatarColor = remember(expense.userName) {
+    val avatarRes: Int? = remember(expense.userName) {
         when (expense.userName.lowercase()) {
-            "паша" -> Color(0xFF4CAF50) // Зелений для Паші
-            "таня" -> Color(0xFFE91E63) // Рожевий для Тані
-            else -> Color(0xFF9C27B0) // Фіолетовий для інших
+            "паша", "pasha" -> R.drawable.pasha_avatar
+            "таня", "tanya" -> R.drawable.tanya_avatar
+            else -> null
         }
     }
     val amountColor = remember(expense.type) {
@@ -201,24 +205,29 @@ fun DateTransactionItem(
         // Зона аватарки/іконки видалення (40dp)
         Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
             // Аватарка
-            androidx.compose.animation.AnimatedVisibility(
-                visible = !showDelete,
-                enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(250)),
-                exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(avatarColor),
-                    contentAlignment = Alignment.Center
+            if (!showDelete) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = true,
+                    enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(250)),
+                    exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(250))
                 ) {
-                    Text(
-                        text = expense.userName.firstOrNull()?.uppercase() ?: "?",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    if (avatarRes != null) {
+                        Image(
+                            painter = painterResource(id = avatarRes),
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE0E0E0))
+                        )
+                    }
                 }
             }
 

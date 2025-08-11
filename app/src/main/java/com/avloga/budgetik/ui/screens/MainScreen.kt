@@ -198,7 +198,8 @@ fun MainScreen(
                 onMenuClick = {
                     showSideMenu = !showSideMenu
                 },
-                selectedAccount = selectedAccount
+                selectedAccount = selectedAccount,
+                userId = userId
             )
 
             // Основний контент

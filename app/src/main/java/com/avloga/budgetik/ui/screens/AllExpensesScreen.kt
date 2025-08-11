@@ -253,7 +253,8 @@ fun AllExpensesScreen(
             // Верхня панель
             CustomTopBar(
                 modifier = Modifier.fillMaxWidth(),
-                selectedAccount = selectedAccount
+                selectedAccount = selectedAccount,
+                userId = userId
             )
 
             // Основний контент з LazyColumn

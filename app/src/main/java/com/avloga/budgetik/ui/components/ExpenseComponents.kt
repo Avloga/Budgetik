@@ -43,10 +43,10 @@ fun ExpenseRow(expense: Expense) {
     var showDialog by remember { mutableStateOf(false) }
     val amountText = (if (expense.type == "outcome") "-" else "+") + formatMoneyTruncated(expense.amount)
 
-    val avatarRes = when (expense.userName) {
-        "Паша" -> R.drawable.pasha_avatar
-        "Таня" -> R.drawable.tanya_avatar
-        else -> R.drawable.default_avatar
+    val avatarRes: Int? = when (expense.userName.lowercase()) {
+        "паша", "pasha" -> R.drawable.pasha_avatar
+        "таня", "tanya" -> R.drawable.tanya_avatar
+        else -> null
     }
 
     if (showDialog) {
@@ -77,14 +77,23 @@ fun ExpenseRow(expense: Expense) {
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = avatarRes),
-            contentDescription = "Avatar",
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
+        if (avatarRes != null) {
+            Image(
+                painter = painterResource(id = avatarRes),
+                contentDescription = "Avatar",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE0E0E0))
+            )
+        }
         Spacer(Modifier.width(8.dp))
 
         Column(modifier = Modifier.width(80.dp)) {

@@ -81,5 +81,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.2.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
+    implementation("com.google.accompanist:accompanist-navigation-animation:0.34.0")
 
 }

@@ -56,7 +56,8 @@ fun AddExpenseDialog(
                     val now = Date()
                     val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
                     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                    val amount = amountText.toDoubleOrNull() ?: 0.0
+                    val normalizedAmountText = amountText.trim().replace(',', '.')
+                    val amount = normalizedAmountText.toDoubleOrNull() ?: 0.0
 
                     val expense = Expense(
                         operationId = UUID.randomUUID().toString(),
@@ -87,7 +88,7 @@ fun AddExpenseDialog(
                     value = amountText,
                     onValueChange = { amountText = it },
                     label = { Text("Сума") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
                 Spacer(Modifier.height(8.dp))
 
