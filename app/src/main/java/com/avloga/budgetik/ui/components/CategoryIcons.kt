@@ -44,16 +44,16 @@ fun CategoryText(
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(color.copy(alpha = 0.15f)),
+                .size(53.dp)
+                .clip(CircleShape),
+                //.background(color.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             if (resId != null) {
                 Image(
                     painter = painterResource(id = resId as Int),
                     contentDescription = contentDescription,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(42.dp)
                 )
             } else {
                 Text(text = text, fontSize = 24.sp, fontWeight = FontWeight.Normal)
@@ -61,7 +61,7 @@ fun CategoryText(
         }
 
         if (percentage != null) {
-            Spacer(modifier = Modifier.height(4.dp))
+            //Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = percentage,
                 fontSize = 15.sp,
