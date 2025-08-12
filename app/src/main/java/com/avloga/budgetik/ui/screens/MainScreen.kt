@@ -131,19 +131,21 @@ fun MainScreen(
     }
     val incomeText = remember(totalIncome) { "${formatMoneyTruncated(totalIncome)} грн" }
     val expenseText = remember(totalExpense) { "${formatMoneyTruncated(totalExpense)} грн" }
+    //val otherCategory = Categories.findByName("Інше") ?: error("Категорія 'Інше' не знайдена")
 
     // Розрахунок відсотків для кожної категорії
     val categoryPercentages = remember(allExpensesForDisplay) {
         val totalExpenses = allExpensesForDisplay.filter { it.type == "outcome" }.sumOf { it.amount }
         if (totalExpenses > 0) {
             val categoryTotals = mutableMapOf<String, Double>()
-            
+
             // Підраховуємо суму для кожної категорії
             allExpensesForDisplay.filter { it.type == "outcome" }.forEach { expense ->
                 val category = expense.category ?: "Інше"
-                categoryTotals[category] = categoryTotals.getOrDefault(category, 0.0) + expense.amount
+                val key = if (category == "Переказ") "Інше" else category  // Ось тут заміна
+                categoryTotals[key] = categoryTotals.getOrDefault(key, 0.0) + expense.amount
             }
-            
+
             // Розраховуємо відсотки
             categoryTotals.mapValues { (_, amount) ->
                 val percentage = (amount / totalExpenses * 100)
@@ -213,7 +215,11 @@ fun MainScreen(
                         if (showSideMenu) showSideMenu = false
                         showRightSideMenu = true
                     }
-                }
+                },
+                onSavingsClick = {
+                    navController.navigate("savings/$userId")
+                },
+                isSavingsScreen = false
             )
 
             // Основний контент

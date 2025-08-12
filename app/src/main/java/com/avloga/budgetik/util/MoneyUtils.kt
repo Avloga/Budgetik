@@ -24,9 +24,9 @@ object MoneyUtils {
      */
     fun formatMoneyTruncated(amount: Double): String {
         val absoluteAmount = abs(amount)
-        val truncated = floor(absoluteAmount * 100.0) / 100.0
+        val rounded = kotlin.math.round(absoluteAmount * 100.0) / 100.0
         synchronized(twoDecimalFormatter) {
-            return twoDecimalFormatter.format(truncated)
+            return twoDecimalFormatter.format(rounded)
         }
     }
 

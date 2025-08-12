@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AccountCircle
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +33,9 @@ fun CustomTopBar(
     onMenuClick: () -> Unit = {},
     selectedAccount: AccountType = AccountType.CASH,
     userId: String = "",
-    onAvatarClick: () -> Unit = {}
+    onAvatarClick: () -> Unit = {},
+    onSavingsClick: () -> Unit = {},
+    isSavingsScreen: Boolean = false
 ) {
     val avatarRes: Int? = when (userId.lowercase()) {
         "pasha", "паша" -> R.drawable.pasha_avatar
@@ -84,25 +88,44 @@ fun CustomTopBar(
                     )
                 }
             }
-            // Права частина - аватарка або заглушка
-            if (avatarRes != null) {
-                Image(
-                    painter = painterResource(id = avatarRes),
-                    contentDescription = "User Avatar",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .clickable { onAvatarClick() },
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f))
-                        .clickable { onAvatarClick() }
-                )
+            // Права частина - кнопка накопичень та аватарка
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Кнопка накопичень (або повернення назад)
+                IconButton(
+                    onClick = onSavingsClick
+                ) {
+                    Icon(
+                        imageVector = if (isSavingsScreen) Icons.Default.ArrowBack else Icons.Filled.AccountCircle,
+                        contentDescription = if (isSavingsScreen) "Назад" else "Накопичення",
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Аватарка
+                if (avatarRes != null) {
+                    Image(
+                        painter = painterResource(id = avatarRes),
+                        contentDescription = "User Avatar",
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .clickable { onAvatarClick() },
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.25f))
+                            .clickable { onAvatarClick() }
+                    )
+                }
             }
         }
     }

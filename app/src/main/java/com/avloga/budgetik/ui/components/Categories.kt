@@ -35,7 +35,7 @@ object Categories {
         AppCategory("Гігієна", "🧴", CategoryCyan, CategoryKind.EXPENSE, drawableName = "hygiene_icon"),
         
         //rgb(29, 28, 27)
-        AppCategory("Різне", "🐱", CategoryLightPink, CategoryKind.EXPENSE, drawableName = "other_icon"),
+        AppCategory("Інше", "🐱", CategoryLightPink, CategoryKind.EXPENSE, drawableName = "other_icon"),
         
         // #9C27B0
         AppCategory("Одяг", "👕", CategoryPurple, CategoryKind.EXPENSE, drawableName = "clothes_icon"),
