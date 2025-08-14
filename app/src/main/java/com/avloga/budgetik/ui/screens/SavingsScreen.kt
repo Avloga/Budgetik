@@ -1,6 +1,7 @@
 package com.avloga.budgetik.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -198,7 +199,14 @@ fun SavingsScreen(
                             items = banks,
                             key = { it.id }
                         ) { bank ->
-                            SavingsBankItem(bank = bank)
+                            SavingsBankItem(
+                                bank = bank,
+                                onBankClick = { selectedBank ->
+                                    navController.navigate(
+                                        "bank_details/${selectedBank.id}/${selectedBank.name}/${selectedBank.currentAmount}/${selectedBank.targetAmount}/${selectedBank.withdrawnAmount}"
+                                    )
+                                }
+                            )
                         }
                     }
                 }
@@ -233,13 +241,18 @@ fun SavingsScreen(
 }
 
 @Composable
-fun SavingsBankItem(bank: SavingsBank) {
+fun SavingsBankItem(
+    bank: SavingsBank,
+    onBankClick: (SavingsBank) -> Unit
+) {
     val progress = remember(bank.id, bank.currentAmount, bank.targetAmount) {
         (bank.currentAmount / bank.targetAmount).coerceIn(0.0, 1.0)
     }
     
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onBankClick(bank) },
         verticalAlignment = Alignment.Top
     ) {
         // Зелений круг

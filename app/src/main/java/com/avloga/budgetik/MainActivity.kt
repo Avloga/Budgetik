@@ -95,11 +95,7 @@ class MainActivity : ComponentActivity() {
                         route = "savings/{userId}",
                         arguments = listOf(
                             navArgument("userId") { type = NavType.StringType }
-                        ),
-                        enterTransition = fastSlideUpTransition(),
-                        exitTransition = fastSlideDownTransition(),
-                        popEnterTransition = fastSlideUpTransition(),
-                        popExitTransition = fastSlideDownTransition()
+                        )
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getString("userId") ?: "unknown"
                         val savingsViewModel: SavingsViewModel = viewModel()
@@ -107,6 +103,37 @@ class MainActivity : ComponentActivity() {
                             navController = navController, 
                             userId = userId,
                             viewModel = savingsViewModel
+                        )
+                    }
+
+                    // Екран деталей банки з передачею всіх даних
+                    composable(
+                        route = "bank_details/{bankId}/{bankName}/{currentAmount}/{targetAmount}/{withdrawnAmount}",
+                        arguments = listOf(
+                            navArgument("bankId") { type = NavType.StringType },
+                            navArgument("bankName") { type = NavType.StringType },
+                            navArgument("currentAmount") { type = NavType.StringType },
+                            navArgument("targetAmount") { type = NavType.StringType },
+                            navArgument("withdrawnAmount") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val bankId = backStackEntry.arguments?.getString("bankId") ?: "unknown"
+                        val bankName = backStackEntry.arguments?.getString("bankName") ?: "Банка"
+                        val currentAmount = backStackEntry.arguments?.getString("currentAmount")?.toDoubleOrNull() ?: 0.0
+                        val targetAmount = backStackEntry.arguments?.getString("targetAmount")?.toDoubleOrNull() ?: 0.0
+                        val withdrawnAmount = backStackEntry.arguments?.getString("withdrawnAmount")?.toDoubleOrNull() ?: 0.0
+                        
+                        val bank = com.avloga.budgetik.data.model.SavingsBank(
+                            id = bankId,
+                            name = bankName,
+                            targetAmount = targetAmount,
+                            currentAmount = currentAmount,
+                            withdrawnAmount = withdrawnAmount
+                        )
+                        
+                        com.avloga.budgetik.ui.screens.BankDetailsScreen(
+                            navController = navController,
+                            bank = bank
                         )
                     }
 

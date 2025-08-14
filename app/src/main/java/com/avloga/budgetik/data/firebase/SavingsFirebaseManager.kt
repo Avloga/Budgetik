@@ -90,6 +90,7 @@ class SavingsFirebaseManager {
                 name = request.name,
                 targetAmount = request.targetAmount,
                 currentAmount = 0.0,
+                withdrawnAmount = 0.0, // Додаємо поле для зняття
                 description = request.description,
                 category = request.category,
                 color = request.color,

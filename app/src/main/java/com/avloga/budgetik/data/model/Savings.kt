@@ -10,6 +10,7 @@ data class SavingsBank(
     val name: String = "",
     val targetAmount: Double = 0.0,
     val currentAmount: Double = 0.0,
+    val withdrawnAmount: Double = 0.0, // Сума зняття за весь час
     val color: String = "#4CAF50",
     val userId: String = "",
     val createdAt: Timestamp = Timestamp.now(),
